@@ -36,7 +36,7 @@ let json = """
 
 struct ContentView: View {
     var body: some View {
-        SDUIView(jsonString: json) { name, data in
+        SDUIView(json: json) { name, data in
             print("Action: \(name), Data: \(data)")
         }
     }

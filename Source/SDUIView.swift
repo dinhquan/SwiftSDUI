@@ -10,26 +10,79 @@ import SwiftUI
 // MARK: - JSON-driven SwiftUI renderer
 
 struct SDUIView: View {
-    let jsonString: String
     private let root: SDUINode?
     private let onAction: ((String, SDUIActionValue) -> Void)?
     private let parseError: String?
     private let parameters: [String: Any]
 
-    init(jsonString: String,
+    // Preferred: initialize from JSON string
+    init(json: String,
          parameters: [String: Any] = [:],
          onAction: ((String, SDUIActionValue) -> Void)? = nil
     ) {
-        self.jsonString = jsonString
         self.parameters = parameters
         do {
-            self.root = try SDUIParser.parse(jsonString: jsonString, params: parameters)
+            self.root = try SDUIParser.parse(jsonString: json, params: parameters)
             self.parseError = nil
         } catch {
             self.root = nil
             if let le = error as? LocalizedError, let desc = le.errorDescription { self.parseError = desc } else { self.parseError = error.localizedDescription }
         }
         self.onAction = onAction
+    }
+
+    // Convenience: initialize from already-parsed JSON object (Dictionary/Array)
+    init(jsonObject: Any,
+         parameters: [String: Any] = [:],
+         onAction: ((String, SDUIActionValue) -> Void)? = nil
+    ) {
+        self.parameters = parameters
+        do {
+            self.root = try SDUIParser.parse(jsonObject: jsonObject, params: parameters)
+            self.parseError = nil
+        } catch {
+            self.root = nil
+            if let le = error as? LocalizedError, let desc = le.errorDescription { self.parseError = desc } else { self.parseError = error.localizedDescription }
+        }
+        self.onAction = onAction
+    }
+
+    // Convenience: initialize from raw JSON data
+    init(data: Data,
+         parameters: [String: Any] = [:],
+         onAction: ((String, SDUIActionValue) -> Void)? = nil
+    ) {
+        self.parameters = parameters
+        do {
+            self.root = try SDUIParser.parse(data: data, params: parameters)
+            self.parseError = nil
+        } catch {
+            self.root = nil
+            if let le = error as? LocalizedError, let desc = le.errorDescription { self.parseError = desc } else { self.parseError = error.localizedDescription }
+        }
+        self.onAction = onAction
+    }
+
+    // Convenience: initialize from URL string (file:// or http(s)://). Loads synchronously.
+    init(jsonURL: String,
+         parameters: [String: Any] = [:],
+         onAction: ((String, SDUIActionValue) -> Void)? = nil
+    ) {
+        self.parameters = parameters
+        self.onAction = onAction
+        guard let url = URL(string: jsonURL) else {
+            self.root = nil
+            self.parseError = "SDUI: Invalid URL \(jsonURL)"
+            return
+        }
+        do {
+            let data = try Data(contentsOf: url)
+            self.root = try SDUIParser.parse(data: data, params: parameters)
+            self.parseError = nil
+        } catch {
+            self.root = nil
+            if let le = error as? LocalizedError, let desc = le.errorDescription { self.parseError = desc } else { self.parseError = error.localizedDescription }
+        }
     }
 
     var body: some View {
@@ -80,7 +133,7 @@ struct SDUIView: View {
 }
 """
     let parameters = ["name": "Quan Nguyen"]
-    SDUIView(jsonString: json, parameters: parameters) { name, value in
+    SDUIView(json: json, parameters: parameters) { name, value in
         print("Action: \(name) -> slider:\(String(describing: value.sliderValue)) toggle:\(String(describing: value.toggleValue)) text:\(String(describing: value.textChanged))")
     }
 }
@@ -208,6 +261,22 @@ fileprivate enum SDUIParser {
             let obj = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
             let resolved = resolveParams(in: obj, with: params)
             return try parseNode(resolved)
+        } catch let e as SDUIParseError {
+            throw e
+        } catch {
+            throw SDUIParseError.invalidJSON(error.localizedDescription)
+        }
+    }
+
+    static func parse(jsonObject: Any, params: [String: Any] = [:]) throws -> SDUINode {
+        let resolved = resolveParams(in: jsonObject, with: params)
+        return try parseNode(resolved)
+    }
+
+    static func parse(data: Data, params: [String: Any] = [:]) throws -> SDUINode {
+        do {
+            let obj = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+            return try parse(jsonObject: obj, params: params)
         } catch let e as SDUIParseError {
             throw e
         } catch {
