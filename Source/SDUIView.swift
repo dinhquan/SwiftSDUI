@@ -12,9 +12,9 @@ import SwiftUI
 struct SDUIView: View {
     let jsonString: String
     private let root: SDUINode?
-    private let onAction: ((String, [String: Any]?) -> Void)?
+    private let onAction: ((String, SDUIActionValue) -> Void)?
 
-    init(jsonString: String, onAction: ((String, [String: Any]?) -> Void)? = nil) {
+    init(jsonString: String, onAction: ((String, SDUIActionValue) -> Void)? = nil) {
         self.jsonString = jsonString
         self.root = SDUIParser.parse(jsonString: jsonString)
         self.onAction = onAction
@@ -55,14 +55,16 @@ struct SDUIView: View {
             { "type": "color", "color": "yellow", "height": 24 }
         ]},
         { "type": "button", "title": "Tap Me", "action": "#previewTapped", "padding": "top:8" },
+        { "type": "slider", "min": 0, "max": 100, "step": 5, "value": 50, "action": "#previewSlider" },
+        { "type": "toggle", "title": "Enable Feature", "isOn": true, "action": "#previewToggle" },
+        { "type": "textfield", "placeholder": "Enter text", "text": "", "submitLabel": "done", "action": "#previewText" },
         { "type": "rectangle", "color": "#e0e0e0", "size": "100,100", "decoration": "cornerRadius:50,shadowColor:#00000088,shadowRadius:5,shadowOffset:(x:2,y:2)" },
         { "type": "spacer" }
     ]
 }
 """
-    
-    SDUIView(jsonString: json) { name, _ in
-        print("Action: \(name)")
+    SDUIView(jsonString: json) { name, value in
+        print("Action: \(name) -> slider:\(String(describing: value.sliderValue)) toggle:\(String(describing: value.toggleValue)) text:\(String(describing: value.textChanged))")
     }
 }
 
@@ -80,6 +82,9 @@ enum SDUIViewType: String, CaseIterable {
     case button = "Button"
     case rectangle = "Rectangle"
     case color = "Color"
+    case slider = "Slider"
+    case toggle = "Toggle"
+    case textfield = "TextField"
 }
 
 
@@ -105,6 +110,7 @@ enum SDUIProperty: String {
     case offset // "x:10,y:10" or "10,10" - used for alignment inside ZStack
     case aspectRatio // 0.5
     case onTap // "#actionName"
+    case onChange // optional alternative name for change actions
     
     // Text
     case text // "Hello, world!"
@@ -129,6 +135,19 @@ enum SDUIProperty: String {
     case title // "Button Title"
     case action // "#actionName"
     case label // child element
+    
+    // Slider
+    case value // numeric value
+    case min // minimum value
+    case max // maximum value
+    case step // optional step value
+    
+    // Toggle
+    case isOn // boolean
+    
+    // TextField
+    case placeholder // placeholder text
+    case submitLabel // e.g., "done", "go", "search"
     
     // HStack, LazyHStack
     case alignment // "top", "center", "bottom"
@@ -216,7 +235,7 @@ extension SDUIViewType {
 // MARK: - Renderer
 
 fileprivate enum SDUIRenderer {
-    static func buildView(from node: SDUINode, onAction: ((String, [String: Any]?) -> Void)? = nil) -> AnyView {
+    static func buildView(from node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> AnyView {
         let base: AnyView
         switch node.type {
         case .text:
@@ -225,6 +244,12 @@ fileprivate enum SDUIRenderer {
             base = anyView(makeImage(node))
         case .button:
             base = anyView(makeButton(node, onAction: onAction))
+        case .slider:
+            base = anyView(makeSlider(node, onAction: onAction))
+        case .toggle:
+            base = anyView(makeToggle(node, onAction: onAction))
+        case .textfield:
+            base = anyView(makeTextField(node, onAction: onAction))
         case .spacer:
             base = anyView(Spacer(minLength: nil))
         case .hstack, .lazyhstack:
@@ -247,7 +272,7 @@ fileprivate enum SDUIRenderer {
         let withMargin = applyMargin(to: withCore, using: node.props)
         // Attach onTap if present
         if let tap = node.props[.onTap] as? String, let name = actionName(from: tap) {
-            return anyView(withMargin.onTapGesture { onAction?(name, nil) })
+            return anyView(withMargin.onTapGesture { onAction?(name, SDUIActionValue()) })
         }
         return withMargin
     }
@@ -341,14 +366,14 @@ fileprivate enum SDUIRenderer {
         return view
     }
 
-    private static func makeButton(_ node: SDUINode, onAction: ((String, [String: Any]?) -> Void)? = nil) -> AnyView {
+    private static func makeButton(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> AnyView {
         let title = (node.props[.title] as? String) ?? (node.props[.text] as? String) ?? "Button"
         // If a label child is provided, use it
         if let labelNode = labelChild(from: node) {
             return anyView(
                 Button(action: {
                     if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) {
-                        onAction?(name, nil)
+                        onAction?(name, SDUIActionValue())
                     }
                 }) {
                     SDUIRenderer.buildView(from: labelNode, onAction: onAction)
@@ -358,7 +383,7 @@ fileprivate enum SDUIRenderer {
             return anyView(
                 Button(action: {
                     if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) {
-                        onAction?(name, nil)
+                        onAction?(name, SDUIActionValue())
                     }
                 }) {
                     Text(title)
@@ -375,7 +400,7 @@ fileprivate enum SDUIRenderer {
         return node.children.first
     }
 
-    private static func makeHStack(_ node: SDUINode, onAction: ((String, [String: Any]?) -> Void)? = nil) -> some View {
+    private static func makeHStack(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
         let align = horizontalAlignment(node.props[.alignment])
         let spacing = double(node.props[.spacing]).map { CGFloat($0) }
         return HStack(alignment: align, spacing: spacing) {
@@ -385,7 +410,7 @@ fileprivate enum SDUIRenderer {
         }
     }
 
-    private static func makeVStack(_ node: SDUINode, onAction: ((String, [String: Any]?) -> Void)? = nil) -> some View {
+    private static func makeVStack(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
         let (align, spacing) = verticalStackParams(node.props)
         return VStack(alignment: align, spacing: spacing) {
             ForEach(node.children.indices, id: \.self) { i in
@@ -394,7 +419,7 @@ fileprivate enum SDUIRenderer {
         }
     }
 
-    private static func makeZStack(_ node: SDUINode, onAction: ((String, [String: Any]?) -> Void)? = nil) -> some View {
+    private static func makeZStack(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
         let align = zAlignment(node.props[.alignment])
         return ZStack(alignment: align) {
             ForEach(node.children.indices, id: \.self) { i in
@@ -403,7 +428,7 @@ fileprivate enum SDUIRenderer {
         }
     }
 
-    private static func makeScrollView(_ node: SDUINode, onAction: ((String, [String: Any]?) -> Void)? = nil) -> some View {
+    private static func makeScrollView(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
         let axes: Axis.Set = axes(from: node.props[.axes])
         let shows = bool(node.props[.showsIndicators]) ?? true
         // Default container inside scroll view: VStack for vertical, HStack for horizontal
@@ -426,7 +451,7 @@ fileprivate enum SDUIRenderer {
         return colorVal
     }
 
-    private static func makeGrid(_ node: SDUINode, onAction: ((String, [String: Any]?) -> Void)? = nil) -> some View {
+    private static func makeGrid(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
         let count = int(node.props[.columns]) ?? 2
         let spacing = double(node.props[.spacing]).map { CGFloat($0) } ?? 8
         let cols = Array(repeating: GridItem(.flexible(), spacing: spacing), count: max(1, count))
@@ -435,6 +460,36 @@ fileprivate enum SDUIRenderer {
                 SDUIRenderer.buildView(from: node.children[i], onAction: onAction)
             }
         }
+    }
+
+    private static func makeSlider(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> AnyView {
+        let min = double(node.props[.min]) ?? 0
+        let max = double(node.props[.max]) ?? 1
+        let step = double(node.props[.step])
+        let initial = double(node.props[.value]) ?? min
+        let actionName = actionName(from: (node.props[.action] as? String) ?? (node.props[.onChange] as? String) ?? (node.props[.onTap] as? String) ?? "sliderChanged") ?? "sliderChanged"
+        return anyView(SDUISliderView(min: min, max: max, step: step, initial: initial) { newValue in
+            onAction?(actionName, SDUIActionValue(sliderValue: newValue))
+        })
+    }
+
+    private static func makeToggle(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> AnyView {
+        let title = (node.props[.title] as? String) ?? (node.props[.text] as? String) ?? ""
+        let initial = bool(node.props[.isOn]) ?? false
+        let actionName = actionName(from: (node.props[.action] as? String) ?? (node.props[.onChange] as? String) ?? (node.props[.onTap] as? String) ?? "toggleChanged") ?? "toggleChanged"
+        return anyView(SDUIToggleView(title: title, initial: initial) { isOn in
+            onAction?(actionName, SDUIActionValue(toggleValue: isOn))
+        })
+    }
+
+    private static func makeTextField(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> AnyView {
+        let placeholder = (node.props[.placeholder] as? String) ?? ""
+        let initial = (node.props[.text] as? String) ?? ""
+        let submit = (node.props[.submitLabel] as? String)
+        let actionName = actionName(from: (node.props[.action] as? String) ?? (node.props[.onChange] as? String) ?? (node.props[.onTap] as? String) ?? "textChanged") ?? "textChanged"
+        return anyView(SDUITextFieldView(placeholder: placeholder, initial: initial, submitLabel: submit) { text in
+            onAction?(actionName, SDUIActionValue(textChanged: text))
+        })
     }
 
     // MARK: Modifiers
@@ -806,6 +861,96 @@ fileprivate enum SDUIRenderer {
         let s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if s.isEmpty { return nil }
         return s.hasPrefix("#") ? String(s.dropFirst()) : s
+    }
+}
+
+// MARK: - Action Value
+
+struct SDUIActionValue {
+    var sliderValue: Double?
+    var toggleValue: Bool?
+    var textChanged: String?
+    init(sliderValue: Double? = nil, toggleValue: Bool? = nil, textChanged: String? = nil) {
+        self.sliderValue = sliderValue
+        self.toggleValue = toggleValue
+        self.textChanged = textChanged
+    }
+}
+
+// MARK: - Control wrappers
+
+fileprivate struct SDUISliderView: View {
+    let min: Double
+    let max: Double
+    let step: Double?
+    let onChange: (Double) -> Void
+    @State private var value: Double
+
+    init(min: Double, max: Double, step: Double?, initial: Double, onChange: @escaping (Double) -> Void) {
+        self.min = min
+        self.max = max
+        self.step = step
+        let clamped = Swift.max(min, Swift.min(max, initial))
+        self._value = State(initialValue: clamped)
+        self.onChange = onChange
+    }
+
+    var body: some View {
+        Slider(value: $value, in: min...max, step: step ?? 1)
+            .onChange(of: value) { onChange($0) }
+    }
+}
+
+fileprivate struct SDUIToggleView: View {
+    let title: String
+    let onChange: (Bool) -> Void
+    @State private var isOn: Bool
+
+    init(title: String, initial: Bool, onChange: @escaping (Bool) -> Void) {
+        self.title = title
+        self._isOn = State(initialValue: initial)
+        self.onChange = onChange
+    }
+
+    var body: some View {
+        Toggle(title, isOn: $isOn)
+            .onChange(of: isOn) { onChange($0) }
+    }
+}
+
+fileprivate struct SDUITextFieldView: View {
+    let placeholder: String
+    let submit: SubmitLabel?
+    let onChange: (String) -> Void
+    @State private var text: String
+
+    init(placeholder: String, initial: String, submitLabel: String?, onChange: @escaping (String) -> Void) {
+        self.placeholder = placeholder
+        self._text = State(initialValue: initial)
+        self.submit = submitLabel.flatMap { SDUITextFieldView.mapSubmitLabel($0) }
+        self.onChange = onChange
+    }
+
+    var body: some View {
+        TextField(placeholder, text: $text)
+            .textFieldStyle(.roundedBorder)
+            .submitLabel(submit ?? .done)
+            .onChange(of: text) { onChange($0) }
+    }
+
+    private static func mapSubmitLabel(_ s: String) -> SubmitLabel {
+        switch s.lowercased() {
+        case "done": return .done
+        case "go": return .go
+        case "send": return .send
+        case "search": return .search
+        case "join": return .join
+        case "route": return .route
+        case "return": return .return
+        case "next": return .next
+        case "continue": return .continue
+        default: return .done
+        }
     }
 }
 
