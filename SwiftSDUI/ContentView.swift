@@ -32,7 +32,8 @@ let json = """
     { "type": "toggle", "title": "Enable Feature", "isOn": true, "action": "#previewToggle" },
     { "type": "textfield", "placeholder": "Enter text", "text": "", "submitLabel": "done", "action": "#previewText" },
     { "type": "rectangle", "color": "#e0e0e0", "size": "100,100", "decoration": "cornerRadius:50,shadowColor:#00000088,shadowRadius:5,shadowOffset:(x:2,y:2)" },
-    { "type": "spacer" }
+    { "type": "spacer" },
+    { "type": "custom", "viewId": "custom_1" }
 ]
 }
 """
@@ -42,9 +43,14 @@ struct ContentView: View {
         let parameters = ["name": "Quan Nguyen"]
         SDUIView(json: json, parameters: parameters) { name, value in
             print("Action: \(name) -> slider:\(String(describing: value.sliderValue)) toggle:\(String(describing: value.toggleValue)) text:\(String(describing: value.textChanged))")
-        } customView: { _ in
-            Color.red
-                .frame(height: 100)
+        } customView: { viewId in
+            switch viewId {
+            case "custom_1":
+                return Color.red
+                    .frame(height: 100)
+            default:
+                return nil
+            }
         }
     }
 }
