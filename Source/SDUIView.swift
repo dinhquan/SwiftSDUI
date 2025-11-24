@@ -14,6 +14,7 @@ struct SDUIView: View {
     private let onAction: ((String, SDUIActionValue) -> Void)?
     private let parseError: String?
     private let parameters: [String: Any]
+    private let remoteURL: URL?
 
     // Preferred: initialize from JSON string
     init(json: String,
@@ -21,6 +22,7 @@ struct SDUIView: View {
          onAction: ((String, SDUIActionValue) -> Void)? = nil
     ) {
         self.parameters = parameters
+        self.remoteURL = nil
         do {
             self.root = try SDUIParser.parse(jsonString: json, params: parameters)
             self.parseError = nil
@@ -37,6 +39,7 @@ struct SDUIView: View {
          onAction: ((String, SDUIActionValue) -> Void)? = nil
     ) {
         self.parameters = parameters
+        self.remoteURL = nil
         do {
             self.root = try SDUIParser.parse(jsonObject: jsonObject, params: parameters)
             self.parseError = nil
@@ -53,6 +56,7 @@ struct SDUIView: View {
          onAction: ((String, SDUIActionValue) -> Void)? = nil
     ) {
         self.parameters = parameters
+        self.remoteURL = nil
         do {
             self.root = try SDUIParser.parse(data: data, params: parameters)
             self.parseError = nil
@@ -63,40 +67,40 @@ struct SDUIView: View {
         self.onAction = onAction
     }
 
-    // Convenience: initialize from URL string (file:// or http(s)://). Loads synchronously.
+    // Asynchronous loader initializer: performs fetch in body via a loader view
     init(jsonURL: String,
          parameters: [String: Any] = [:],
          onAction: ((String, SDUIActionValue) -> Void)? = nil
     ) {
         self.parameters = parameters
         self.onAction = onAction
-        guard let url = URL(string: jsonURL) else {
+        if let url = URL(string: jsonURL) {
+            self.remoteURL = url
+            self.root = nil
+            self.parseError = nil
+        } else {
+            self.remoteURL = nil
             self.root = nil
             self.parseError = "SDUI: Invalid URL \(jsonURL)"
-            return
-        }
-        do {
-            let data = try Data(contentsOf: url)
-            self.root = try SDUIParser.parse(data: data, params: parameters)
-            self.parseError = nil
-        } catch {
-            self.root = nil
-            if let le = error as? LocalizedError, let desc = le.errorDescription { self.parseError = desc } else { self.parseError = error.localizedDescription }
         }
     }
 
     var body: some View {
         Group {
-            if let error = parseError {
+            if let url = remoteURL {
+                SDUIRemoteLoader(url: url, parameters: parameters, onAction: onAction)
+            } else if let error = parseError {
                 Text(error)
                     .font(.footnote)
                     .foregroundStyle(.red)
+                    .padding()
             } else if let root {
                 SDUIRenderer.buildView(from: root, onAction: onAction)
             } else {
                 Text("Invalid SDUI JSON")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .padding()
             }
         }
     }
@@ -1156,6 +1160,45 @@ fileprivate struct SDUITextFieldView: View {
 }
 
 // MARK: - AnyView helpers
+
+fileprivate struct SDUIRemoteLoader: View {
+    let url: URL
+    let parameters: [String: Any]
+    let onAction: ((String, SDUIActionValue) -> Void)?
+
+    @State private var root: SDUINode?
+    @State private var error: String?
+    @State private var isLoading: Bool = true
+
+    var body: some View {
+        Group {
+            if let error {
+                Text(error).font(.footnote).foregroundStyle(.red)
+            } else if let root {
+                SDUIRenderer.buildView(from: root, onAction: onAction)
+            } else {
+                ProgressView().progressViewStyle(.circular)
+            }
+        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let parsed = try SDUIParser.parse(data: data, params: parameters)
+            await MainActor.run {
+                self.root = parsed
+                self.isLoading = false
+            }
+        } catch {
+            await MainActor.run {
+                if let le = error as? LocalizedError, let desc = le.errorDescription { self.error = desc } else { self.error = error.localizedDescription }
+                self.isLoading = false
+            }
+        }
+    }
+}
 
 fileprivate func anyView<V: View>(_ v: V) -> AnyView { AnyView(v) }
 
