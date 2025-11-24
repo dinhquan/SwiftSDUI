@@ -8,35 +8,75 @@
 import SwiftUI
 
 struct SDUIView: View {
+    let jsonString: String
+    
     init(jsonString: String) {
-        
+        self.jsonString = jsonString
     }
     
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-                .font(.system(size: 16, weight: .regular))
-                
-            HStack(alignment: .top) {
-                
-            }
-            .ignoresSafeArea(.all, edges: .top)
-        }
-        .padding()
+        EmptyView()
     }
 }
 
 #Preview {
+    let json = """
+{
+    "type": "vstack",
+    "children": [
+        {
+            "type": "text",
+            "text": "Hello, world!",
+            "fontSize": 16,
+            "fontWeight": "regular"
+        },
+        {
+            "type": "hstack",
+            "alignment": "top",
+            "children": [
+                {
+                    "type": "text",
+                    "text": "This is a child text in HStack",
+                    "fontSize": 14,
+                    "fontWeight": "medium"
+                },
+                {
+                    "type": "image",
+                    "imageSystemName": "star.fill",
+                    "resizable": true,
+                    "contentMode": "fit",
+                    "width": 24,
+                    "height": 24
+                }
+            ]
+        }
+    ],
+    "ignoresSafeArea": "all"
+}
+"""
+    
     SDUIView(jsonString: "")
 }
 
+enum SDUIViewType: String {
+    case spacer
+    case hstack
+    case vstack
+    case lazyhstack
+    case lazyvstack
+    case scrollview
+    case grid
+    case text
+    case image
+    case button
+    case rectangle
+    case color
+}
 
-enum SDUIProperty {
+
+enum SDUIProperty: String {
     // Common
-    case type // "text", "image", "button", "view", "hstack", "vstack", "lazyhstack", "lazyvstack", "scrollview", "grid"
+    case type // "text", "image", "button", "hstack", "vstack", "lazyhstack", "lazyvstack", "scrollview", "grid", "rectangle", "color", "spacer"
     case color // "#FF0000" or "red"
     case backgroundColor
     case padding // "left:10,right:10" or "all:10" or "vertical:10,horizontal:10"
