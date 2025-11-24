@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CryptoKit
 
 // MARK: - JSON-driven SwiftUI renderer
 
@@ -113,6 +114,7 @@ struct SDUIView: View {
     "padding": "all:16",
     "children": [
         { "type": "text", "text": "Hello, world! My name is $name", "font": "size:20,weight:semibold" },
+        { "type": "image", "imageURL": "https://upload.wikimedia.org/wikipedia/en/a/a9/Example.jpg", "resizable": "true", "size": "100,100" },
         { "type": "hstack", "alignment": "top", "spacing": 8, "children": [
             { "type": "text", "text": "In HStack", "fontSize": 14, "fontWeight": "medium" },
             { "type": "image", "imageSystemName": "star.fill", "resizable": true, "contentMode": "fit", "width": 24, "height": 24 }
@@ -535,23 +537,7 @@ fileprivate enum SDUIRenderer {
         if let urlStr = node.props[.imageURL] as? String, let url = URL(string: urlStr) {
             let resizable = bool(node.props[.resizable]) ?? false
             let mode = (node.props[.contentMode] as? String)?.lowercased() ?? "fit"
-            return anyView(AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    var v: AnyView = anyView(image)
-                    if resizable { v = anyView(image.resizable()) }
-                    switch mode {
-                    case "fill": return anyView(v.scaledToFill())
-                    default: return anyView(v.scaledToFit())
-                    }
-                case .failure(_):
-                    return anyView(Image(systemName: "xmark.octagon").foregroundStyle(.red))
-                case .empty:
-                    fallthrough
-                @unknown default:
-                    return anyView(ProgressView())
-                }
-            })
+            return anyView(SDUICachedImageView(url: url, resizable: resizable, contentMode: mode))
         }
         // Fallback placeholder
         return anyView(Image(systemName: "photo"))
@@ -1196,6 +1182,93 @@ fileprivate struct SDUIRemoteLoader: View {
                 if let le = error as? LocalizedError, let desc = le.errorDescription { self.error = desc } else { self.error = error.localizedDescription }
                 self.isLoading = false
             }
+        }
+    }
+}
+
+// Cached remote image loader using NSCache (memory) + disk cache
+fileprivate final class SDUIImageCache {
+    static let shared = SDUIImageCache()
+    private let ioQueue = DispatchQueue(label: "sdui.image.cache.io")
+    private let folderURL: URL
+
+    private init() {
+        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let dir = base.appendingPathComponent("SDUIImageCache", isDirectory: true)
+        self.folderURL = dir
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+
+    func image(for url: URL) -> UIImage? {
+        let file = fileURL(for: url)
+        if let data = try? Data(contentsOf: file), let img = UIImage(data: data) {
+            return img
+        }
+        return nil
+    }
+
+    func store(_ imageData: Data, for url: URL) {
+        let file = fileURL(for: url)
+        ioQueue.async { try? imageData.write(to: file, options: [.atomic]) }
+    }
+
+    private func fileURL(for url: URL) -> URL {
+        let key = Self.hash(url.absoluteString)
+        return folderURL.appendingPathComponent(key).appendingPathExtension("img")
+    }
+
+    private static func hash(_ s: String) -> String {
+        let data = Data(s.utf8)
+        let digest = SHA256.hash(data: data)
+        return digest.compactMap { String(format: "%02x", $0) }.joined()
+    }
+}
+
+fileprivate struct SDUICachedImageView: View {
+    let url: URL
+    let resizable: Bool
+    let contentMode: String?
+    @State private var uiImage: UIImage?
+    @State private var error: String?
+
+    var body: some View { content().task { await load() } }
+
+    @ViewBuilder
+    private func content() -> some View {
+        if let uiImage {
+            renderImage(uiImage)
+        } else if error != nil {
+            Image(systemName: "xmark.octagon").foregroundStyle(.red)
+        } else {
+            ProgressView()
+        }
+    }
+
+    private func renderImage(_ ui: UIImage) -> AnyView {
+        let base = Image(uiImage: ui).renderingMode(.original)
+        var v: AnyView = resizable ? anyView(base.resizable()) : anyView(base)
+        switch (contentMode ?? "fit").lowercased() {
+        case "fill": v = anyView(v.scaledToFill())
+        default: v = anyView(v.scaledToFit())
+        }
+        return v
+    }
+
+    private func load() async {
+        if let cached = SDUIImageCache.shared.image(for: url) {
+            await MainActor.run { self.uiImage = cached }
+            return
+        }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            SDUIImageCache.shared.store(data, for: url)
+            if let img = UIImage(data: data) {
+                await MainActor.run { self.uiImage = img }
+            } else {
+                await MainActor.run { self.error = "Invalid image data" }
+            }
+        } catch {
+            await MainActor.run { self.error = error.localizedDescription }
         }
     }
 }
