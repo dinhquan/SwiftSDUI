@@ -14,11 +14,16 @@ struct SDUIView: View {
     private let root: SDUINode?
     private let onAction: ((String, SDUIActionValue) -> Void)?
     private let parseError: String?
+    private let parameters: [String: Any]
 
-    init(jsonString: String, onAction: ((String, SDUIActionValue) -> Void)? = nil) {
+    init(jsonString: String,
+         parameters: [String: Any] = [:],
+         onAction: ((String, SDUIActionValue) -> Void)? = nil
+    ) {
         self.jsonString = jsonString
+        self.parameters = parameters
         do {
-            self.root = try SDUIParser.parse(jsonString: jsonString)
+            self.root = try SDUIParser.parse(jsonString: jsonString, params: parameters)
             self.parseError = nil
         } catch {
             self.root = nil
@@ -50,7 +55,7 @@ struct SDUIView: View {
     "type": "vstack",
     "padding": "all:16",
     "children": [
-        { "type": "text", "text": "Hello, world!", "font": "size:20,weight:semibold" },
+        { "type": "text", "text": "Hello, world! My name is $name", "font": "size:20,weight:semibold" },
         { "type": "hstack", "alignment": "top", "spacing": 8, "children": [
             { "type": "text", "text": "In HStack", "fontSize": 14, "fontWeight": "medium" },
             { "type": "image", "imageSystemName": "star.fill", "resizable": true, "contentMode": "fit", "width": 24, "height": 24 }
@@ -74,7 +79,8 @@ struct SDUIView: View {
     ]
 }
 """
-    SDUIView(jsonString: json) { name, value in
+    let parameters = ["name": "Quan Nguyen"]
+    SDUIView(jsonString: json, parameters: parameters) { name, value in
         print("Action: \(name) -> slider:\(String(describing: value.sliderValue)) toggle:\(String(describing: value.toggleValue)) text:\(String(describing: value.textChanged))")
     }
 }
@@ -194,18 +200,97 @@ fileprivate struct SDUINode {
 // MARK: - Parser
 
 fileprivate enum SDUIParser {
-    static func parse(jsonString: String) throws -> SDUINode {
+    static func parse(jsonString: String, params: [String: Any] = [:]) throws -> SDUINode {
         let trimmed = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw SDUIParseError.emptyInput }
         guard let data = trimmed.data(using: .utf8) else { throw SDUIParseError.emptyInput }
         do {
             let obj = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
-            return try parseNode(obj)
+            let resolved = resolveParams(in: obj, with: params)
+            return try parseNode(resolved)
         } catch let e as SDUIParseError {
             throw e
         } catch {
             throw SDUIParseError.invalidJSON(error.localizedDescription)
         }
+    }
+
+    // Resolve $param references recursively in dictionaries/arrays/strings.
+    private static func resolveParams(in obj: Any, with params: [String: Any]) -> Any {
+        if let dict = obj as? [String: Any] {
+            var out: [String: Any] = [:]
+            for (k, v) in dict { out[k] = resolveParams(in: v, with: params) }
+            return out
+        } else if let arr = obj as? [Any] {
+            return arr.map { resolveParams(in: $0, with: params) }
+        } else if let s = obj as? String {
+            return resolveString(s, with: params)
+        } else {
+            return obj
+        }
+    }
+
+    private static func resolveString(_ s: String, with params: [String: Any]) -> Any {
+        // If string is exactly one token like "$name", replace with raw param value (keeps type)
+        if let name = singleTokenName(s), let val = params[name] {
+            return val
+        }
+        // Otherwise interpolate into a string
+        var result = ""
+        var i = s.startIndex
+        while i < s.endIndex {
+            let ch = s[i]
+            if ch == "$" {
+                let start = s.index(after: i)
+                var j = start
+                // first char must be letter or underscore
+                if j < s.endIndex, isNameStartChar(s[j]) {
+                    j = s.index(after: j)
+                    while j < s.endIndex, isNameChar(s[j]) { j = s.index(after: j) }
+                    let name = String(s[start..<j])
+                    if let val = params[name] {
+                        if let vs = val as? String { result.append(vs) }
+                        else { result.append(String(describing: val)) }
+                        i = j
+                        continue
+                    } else {
+                        // Unknown token; keep literal
+                        result.append("$")
+                        result.append(name)
+                        i = j
+                        continue
+                    }
+                } else {
+                    // Lone '$' or invalid start, keep it
+                    result.append("$")
+                    i = start
+                    continue
+                }
+            }
+            result.append(ch)
+            i = s.index(after: i)
+        }
+        return result
+    }
+
+    private static func singleTokenName(_ s: String) -> String? {
+        guard s.first == "$" else { return nil }
+        if s.count < 2 { return nil }
+        let start = s.index(after: s.startIndex)
+        guard isNameStartChar(s[start]) else { return nil }
+        var j = s.index(after: start)
+        while j < s.endIndex, isNameChar(s[j]) { j = s.index(after: j) }
+        if j == s.endIndex {
+            return String(s[start..<j])
+        }
+        return nil
+    }
+
+    private static func isNameStartChar(_ c: Character) -> Bool {
+        return c.isLetter || c == "_"
+    }
+    private static func isNameChar(_ c: Character) -> Bool {
+        return c.isLetter || c.isNumber || c == "_"
     }
 
     private static func parseNode(_ obj: Any) throws -> SDUINode {
@@ -440,7 +525,7 @@ fileprivate enum SDUIRenderer {
     }
 
     private static func labelChild(from node: SDUINode) -> SDUINode? {
-        if let label = node.props[.label] as? [String: Any], let parsed = try? SDUIParser.parse(jsonString: toJSONString(label)) {
+        if let label = node.props[.label] as? [String: Any], let parsed = try? SDUIParser.parse(jsonString: toJSONString(label), params: [:]) {
             return parsed
         }
         // Or use first child as label if present
