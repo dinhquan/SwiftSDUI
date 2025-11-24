@@ -13,8 +13,24 @@ SwiftSDUI lets you describe SwiftUI screens in JSON and render them at runtime. 
 - Helpful, precise parse errors for invalid JSON/schemas
 
 ## Installation
-- Drop the `Source/` folder into your project, or
-- Create a Swift Package and include the files from `Source/`
+- Swift Package Manager (recommended)
+  - In Xcode: File → Add Packages… → Enter your repo URL → Add.
+  - Or add as a local package: File → Add Packages… → Add Local… → select this folder.
+  - Package manifest is provided (`Package.swift`). Minimum iOS 15.
+- CocoaPods
+  - Ensure `SwiftSDUI.podspec` is in the repo. If using from a Git tag, push a tag matching `s.version`.
+  - Podfile:
+    ```ruby
+    platform :ios, '15.0'
+    use_frameworks!
+
+    target 'YourApp' do
+      pod 'SwiftSDUI', :git => 'https://github.com/your/repo.git', :tag => '0.1.0'
+      # Or for local development:
+      # pod 'SwiftSDUI', :path => '../SwiftSDUI'
+    end
+    ```
+  - Then run: `pod install`
 
 Import and render:
 ```swift
