@@ -276,20 +276,20 @@ fileprivate enum SDUIRenderer {
         return view
     }
 
-    private static func makeImage(_ node: SDUINode) -> some View {
+    private static func makeImage(_ node: SDUINode) -> AnyView {
         // Priority: systemName -> asset name -> URL (if available)
         if let sys = node.props[.imageSystemName] as? String, !sys.isEmpty {
             let img = Image(systemName: sys)
-            return imageView(from: img, props: node.props)
+            return anyView(imageView(from: img, props: node.props))
         }
         if let name = node.props[.imageName] as? String, !name.isEmpty {
             let img = Image(name)
-            return imageView(from: img, props: node.props)
+            return anyView(imageView(from: img, props: node.props))
         }
         if let urlStr = node.props[.imageURL] as? String, let url = URL(string: urlStr) {
             let resizable = bool(node.props[.resizable]) ?? false
             let mode = (node.props[.contentMode] as? String)?.lowercased() ?? "fit"
-            return AsyncImage(url: url) { phase in
+            return anyView(AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let image):
                     var v: AnyView = anyView(image)
@@ -305,10 +305,10 @@ fileprivate enum SDUIRenderer {
                 @unknown default:
                     return anyView(ProgressView())
                 }
-            }
+            })
         }
         // Fallback placeholder
-        return Image(systemName: "photo")
+        return anyView(Image(systemName: "photo"))
     }
 
     private static func imageView(from image: Image, props: [SDUIProperty: Any]) -> some View {
@@ -325,23 +325,29 @@ fileprivate enum SDUIRenderer {
         return view
     }
 
-    private static func makeButton(_ node: SDUINode, onAction: ((String, [String: Any]?) -> Void)? = nil) -> some View {
+    private static func makeButton(_ node: SDUINode, onAction: ((String, [String: Any]?) -> Void)? = nil) -> AnyView {
         let title = (node.props[.title] as? String) ?? (node.props[.text] as? String) ?? "Button"
         // If a label child is provided, use it
         if let labelNode = labelChild(from: node) {
-            return Button(action: {
-                if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) {
-                    onAction?(name, nil)
+            return anyView(
+                Button(action: {
+                    if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) {
+                        onAction?(name, nil)
+                    }
+                }) {
+                    SDUIRenderer.buildView(from: labelNode, onAction: onAction)
                 }
-            }) {
-                SDUIRenderer.buildView(from: labelNode, onAction: onAction)
-            }
+            )
         } else {
-            return Button(title) {
-                if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) {
-                    onAction?(name, nil)
+            return anyView(
+                Button(action: {
+                    if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) {
+                        onAction?(name, nil)
+                    }
+                }) {
+                    Text(title)
                 }
-            }
+            )
         }
     }
 
