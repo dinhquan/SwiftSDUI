@@ -13,11 +13,13 @@ public struct SDUIView: View {
     private let parseError: String?
     private let parameters: [String: Any]
     private let remoteURL: URL?
+    private let customViewProvider: ((String) -> AnyView?)?
 
     // From JSON string
-    public init(json: String, parameters: [String: Any] = [:], onAction: ((String, SDUIActionValue) -> Void)? = nil) {
+    public init(json: String, parameters: [String: Any] = [:], onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) {
         self.parameters = parameters
         self.remoteURL = nil
+        self.customViewProvider = customView
         do {
             self.root = try SDUIParser.parse(jsonString: json, params: parameters)
             self.parseError = nil
@@ -29,9 +31,10 @@ public struct SDUIView: View {
     }
 
     // From already decoded object
-    public init(jsonObject: Any, parameters: [String: Any] = [:], onAction: ((String, SDUIActionValue) -> Void)? = nil) {
+    public init(jsonObject: Any, parameters: [String: Any] = [:], onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) {
         self.parameters = parameters
         self.remoteURL = nil
+        self.customViewProvider = customView
         do {
             self.root = try SDUIParser.parse(jsonObject: jsonObject, params: parameters)
             self.parseError = nil
@@ -43,9 +46,10 @@ public struct SDUIView: View {
     }
 
     // From JSON data
-    public init(data: Data, parameters: [String: Any] = [:], onAction: ((String, SDUIActionValue) -> Void)? = nil) {
+    public init(data: Data, parameters: [String: Any] = [:], onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) {
         self.parameters = parameters
         self.remoteURL = nil
+        self.customViewProvider = customView
         do {
             self.root = try SDUIParser.parse(data: data, params: parameters)
             self.parseError = nil
@@ -57,9 +61,10 @@ public struct SDUIView: View {
     }
 
     // Async init with URL
-    public init(jsonURL: String, parameters: [String: Any] = [:], onAction: ((String, SDUIActionValue) -> Void)? = nil) {
+    public init(jsonURL: String, parameters: [String: Any] = [:], onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) {
         self.parameters = parameters
         self.onAction = onAction
+        self.customViewProvider = customView
         if let url = URL(string: jsonURL) {
             self.remoteURL = url
             self.root = nil
@@ -74,25 +79,14 @@ public struct SDUIView: View {
     public var body: some View {
         Group {
             if let url = remoteURL {
-                SDUIRemoteLoader(url: url, parameters: parameters, onAction: onAction)
+                SDUIRemoteLoader(url: url, parameters: parameters, onAction: onAction, customView: customViewProvider)
             } else if let error = parseError {
                 Text(error).font(.footnote).foregroundStyle(.red)
             } else if let root {
-                SDUIRenderer.buildView(from: root, onAction: onAction)
+                SDUIRenderer.buildView(from: root, onAction: onAction, customView: customViewProvider)
             } else {
                 Text("Invalid SDUI JSON").font(.footnote).foregroundStyle(.secondary)
             }
         }
-    }
-}
-
-public struct SDUIActionValue {
-    var sliderValue: Double?
-    var toggleValue: Bool?
-    var textChanged: String?
-    init(sliderValue: Double? = nil, toggleValue: Bool? = nil, textChanged: String? = nil) {
-        self.sliderValue = sliderValue
-        self.toggleValue = toggleValue
-        self.textChanged = textChanged
     }
 }

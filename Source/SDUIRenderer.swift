@@ -8,24 +8,27 @@
 import SwiftUI
 
 enum SDUIRenderer {
-    static func buildView(from node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> AnyView {
+    static func buildView(from node: SDUINode,
+                          onAction: ((String, SDUIActionValue) -> Void)? = nil,
+                          customView: ((String) -> AnyView?)? = nil) -> AnyView {
         let base: AnyView
         switch node.type {
         case .text: base = anyView(makeText(node))
         case .image: base = anyView(makeImage(node))
-        case .button: base = anyView(makeButton(node, onAction: onAction))
+        case .button: base = anyView(makeButton(node, onAction: onAction, customView: customView))
         case .slider: base = anyView(makeSlider(node, onAction: onAction))
         case .toggle: base = anyView(makeToggle(node, onAction: onAction))
         case .textfield: base = anyView(makeTextField(node, onAction: onAction))
         case .spacer: base = anyView(Spacer(minLength: nil))
-        case .hstack, .lazyhstack: base = anyView(makeHStack(node, onAction: onAction))
-        case .vstack, .lazyvstack: base = anyView(makeVStack(node, onAction: onAction))
-        case .zstack: base = anyView(makeZStack(node, onAction: onAction))
-        case .scrollview: base = anyView(makeScrollView(node, onAction: onAction))
+        case .hstack, .lazyhstack: base = anyView(makeHStack(node, onAction: onAction, customView: customView))
+        case .vstack, .lazyvstack: base = anyView(makeVStack(node, onAction: onAction, customView: customView))
+        case .zstack: base = anyView(makeZStack(node, onAction: onAction, customView: customView))
+        case .scrollview: base = anyView(makeScrollView(node, onAction: onAction, customView: customView))
         case .rectangle: base = anyView(makeRectangle(node))
         case .color: base = anyView(makeColor(node))
-        case .grid: base = anyView(makeGrid(node, onAction: onAction))
-        case .tabview: base = anyView(makeTabView(node, onAction: onAction))
+        case .grid: base = anyView(makeGrid(node, onAction: onAction, customView: customView))
+        case .tabview: base = anyView(makeTabView(node, onAction: onAction, customView: customView))
+        case .custom: base = anyView(makeCustom(node, provider: customView))
         }
         let withCore = applyCoreModifiers(to: base, using: node.props)
         let withMargin = applyMargin(to: withCore, using: node.props)
@@ -80,12 +83,12 @@ enum SDUIRenderer {
         return view
     }
 
-    private static func makeButton(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> AnyView {
+    private static func makeButton(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) -> AnyView {
         let title = (node.props[.title] as? String) ?? (node.props[.text] as? String) ?? "Button"
         if let labelNode = labelChild(from: node) {
             return anyView(Button(action: {
                 if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) { onAction?(name, SDUIActionValue()) }
-            }) { SDUIRenderer.buildView(from: labelNode, onAction: onAction) })
+            }) { SDUIRenderer.buildView(from: labelNode, onAction: onAction, customView: customView) })
         } else {
             return anyView(Button(action: {
                 if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) { onAction?(name, SDUIActionValue()) }
@@ -98,33 +101,33 @@ enum SDUIRenderer {
         return node.children.first
     }
 
-    private static func makeHStack(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
+    private static func makeHStack(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) -> some View {
         let align = horizontalAlignment(node.props[.alignment])
         let spacing = double(node.props[.spacing]).map { CGFloat($0) }
         return HStack(alignment: align, spacing: spacing) {
-            ForEach(node.children.indices, id: \.self) { i in SDUIRenderer.buildView(from: node.children[i], onAction: onAction) }
+            ForEach(node.children.indices, id: \.self) { i in SDUIRenderer.buildView(from: node.children[i], onAction: onAction, customView: customView) }
         }
     }
 
-    private static func makeVStack(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
+    private static func makeVStack(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) -> some View {
         let (align, spacing) = verticalStackParams(node.props)
         return VStack(alignment: align, spacing: spacing) {
-            ForEach(node.children.indices, id: \.self) { i in SDUIRenderer.buildView(from: node.children[i], onAction: onAction) }
+            ForEach(node.children.indices, id: \.self) { i in SDUIRenderer.buildView(from: node.children[i], onAction: onAction, customView: customView) }
         }
     }
 
-    private static func makeZStack(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
+    private static func makeZStack(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) -> some View {
         let align = zAlignment(node.props[.alignment])
         return ZStack(alignment: align) {
-            ForEach(node.children.indices, id: \.self) { i in SDUIRenderer.buildView(from: node.children[i], onAction: onAction) }
+            ForEach(node.children.indices, id: \.self) { i in SDUIRenderer.buildView(from: node.children[i], onAction: onAction, customView: customView) }
         }
     }
 
-    private static func makeScrollView(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
+    private static func makeScrollView(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) -> some View {
         let axes: Axis.Set = axes(from: node.props[.axes])
         let shows = bool(node.props[.showsIndicators]) ?? true
         return ScrollView(axes, showsIndicators: shows) {
-            if axes == .vertical { makeVStack(node, onAction: onAction) } else { makeHStack(node, onAction: onAction) }
+            if axes == .vertical { makeVStack(node, onAction: onAction, customView: customView) } else { makeHStack(node, onAction: onAction, customView: customView) }
         }
     }
 
@@ -134,18 +137,25 @@ enum SDUIRenderer {
     }
     private static func makeColor(_ node: SDUINode) -> some View { (node.props[.color] as? String).flatMap { color(from: $0) } ?? .clear }
 
-    private static func makeGrid(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> some View {
+    private static func makeGrid(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) -> some View {
         let count = int(node.props[.columns]) ?? 2
         let spacing = double(node.props[.spacing]).map { CGFloat($0) } ?? 8
         let cols = Array(repeating: GridItem(.flexible(), spacing: spacing), count: max(1, count))
         return LazyVGrid(columns: cols, spacing: spacing) {
-            ForEach(node.children.indices, id: \.self) { i in SDUIRenderer.buildView(from: node.children[i], onAction: onAction) }
+            ForEach(node.children.indices, id: \.self) { i in SDUIRenderer.buildView(from: node.children[i], onAction: onAction, customView: customView) }
         }
     }
 
-    private static func makeTabView(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> AnyView {
+    private static func makeTabView(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) -> AnyView {
         let initial = int(node.props[.selection]) ?? 0
-        return anyView(SDUITabViewContainer(nodes: node.children, initialSelection: initial, onAction: onAction))
+        return anyView(SDUITabViewContainer(nodes: node.children, initialSelection: initial, onAction: onAction, customView: customView))
+    }
+
+    private static func makeCustom(_ node: SDUINode, provider: ((String) -> AnyView?)?) -> AnyView {
+        guard let id = node.props[.viewId] as? String, let view = provider?(id) else {
+            return anyView(Text("Missing custom view for id").font(.footnote).foregroundStyle(.secondary))
+        }
+        return view
     }
 
     private static func makeSlider(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil) -> AnyView {
@@ -304,4 +314,3 @@ enum SDUIRenderer {
     static func toJSONString(_ dict: [String: Any]) -> String { (try? String(data: JSONSerialization.data(withJSONObject: dict, options: []), encoding: .utf8)) ?? "{}" }
     static func actionName(from raw: String) -> String? { let s = raw.trimmingCharacters(in: .whitespacesAndNewlines); return s.isEmpty ? nil : (s.hasPrefix("#") ? String(s.dropFirst()) : s) }
 }
-

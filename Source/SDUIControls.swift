@@ -85,19 +85,21 @@ struct SDUITextFieldView: View {
 struct SDUITabViewContainer: View {
     let nodes: [SDUINode]
     let onAction: ((String, SDUIActionValue) -> Void)?
+    let customView: ((String) -> AnyView?)?
     @State private var selection: Int
 
-    init(nodes: [SDUINode], initialSelection: Int, onAction: ((String, SDUIActionValue) -> Void)?) {
+    init(nodes: [SDUINode], initialSelection: Int, onAction: ((String, SDUIActionValue) -> Void)?, customView: ((String) -> AnyView?)?) {
         self.nodes = nodes
         self._selection = State(initialValue: max(0, min(initialSelection, max(0, nodes.count - 1))))
         self.onAction = onAction
+        self.customView = customView
     }
 
     var body: some View {
         TabView(selection: $selection) {
             ForEach(nodes.indices, id: \.self) { i in
                 let child = nodes[i]
-                SDUIRenderer.buildView(from: child, onAction: onAction)
+                SDUIRenderer.buildView(from: child, onAction: onAction, customView: customView)
                     .tabItem { tabItemLabel(for: child, index: i) }
                     .tag(i)
             }

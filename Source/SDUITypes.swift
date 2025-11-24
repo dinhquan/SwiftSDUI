@@ -25,6 +25,7 @@ enum SDUIViewType: String, CaseIterable {
     case toggle = "Toggle"
     case textfield = "TextField"
     case tabview = "TabView"
+    case custom = "Custom"
 }
 
 enum SDUIProperty: String {
@@ -75,6 +76,9 @@ enum SDUIProperty: String {
     case action // "#actionName"
     case label // child element (JSON object) used as custom label
 
+    // Custom view injection
+    case viewId // identifier to resolve a custom SwiftUI view from outside
+
     // Slider
     case value // numeric current value
     case min // minimum value
@@ -109,6 +113,18 @@ struct SDUINode {
     let type: SDUIViewType
     var props: [SDUIProperty: Any]
     var children: [SDUINode]
+}
+
+// Action payload for callbacks
+public struct SDUIActionValue {
+    public var sliderValue: Double?
+    public var toggleValue: Bool?
+    public var textChanged: String?
+    public init(sliderValue: Double? = nil, toggleValue: Bool? = nil, textChanged: String? = nil) {
+        self.sliderValue = sliderValue
+        self.toggleValue = toggleValue
+        self.textChanged = textChanged
+    }
 }
 
 // Case-insensitive type lookup

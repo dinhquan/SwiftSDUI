@@ -42,6 +42,9 @@ struct ContentView: View {
         let parameters = ["name": "Quan Nguyen"]
         SDUIView(json: json, parameters: parameters) { name, value in
             print("Action: \(name) -> slider:\(String(describing: value.sliderValue)) toggle:\(String(describing: value.toggleValue)) text:\(String(describing: value.textChanged))")
+        } customView: { _ in
+            Color.red
+                .frame(height: 100)
         }
     }
 }

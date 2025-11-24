@@ -91,6 +91,7 @@ struct SDUIRemoteLoader: View {
     let url: URL
     let parameters: [String: Any]
     let onAction: ((String, SDUIActionValue) -> Void)?
+    let customView: ((String) -> AnyView?)?
 
     @State private var root: SDUINode?
     @State private var error: String?
@@ -98,7 +99,7 @@ struct SDUIRemoteLoader: View {
     var body: some View {
         Group {
             if let error { Text(error).font(.footnote).foregroundStyle(.red) }
-            else if let root { SDUIRenderer.buildView(from: root, onAction: onAction) }
+            else if let root { SDUIRenderer.buildView(from: root, onAction: onAction, customView: customView) }
             else { ProgressView().progressViewStyle(.circular) }
         }
         .task { await load() }
@@ -116,4 +117,3 @@ struct SDUIRemoteLoader: View {
         }
     }
 }
-
