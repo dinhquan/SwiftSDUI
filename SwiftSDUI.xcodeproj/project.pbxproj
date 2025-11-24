@@ -16,6 +16,11 @@
 			path = SwiftSDUI;
 			sourceTree = "<group>";
 		};
+		148433FF2ED41E90001DA62D /* Source */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Source;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +37,7 @@
 		148433E72ED41E7B001DA62D = {
 			isa = PBXGroup;
 			children = (
+				148433FF2ED41E90001DA62D /* Source */,
 				148433F22ED41E7B001DA62D /* SwiftSDUI */,
 				148433F12ED41E7B001DA62D /* Products */,
 			);
@@ -62,6 +68,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				148433F22ED41E7B001DA62D /* SwiftSDUI */,
+				148433FF2ED41E90001DA62D /* Source */,
 			);
 			name = SwiftSDUI;
 			packageProductDependencies = (
