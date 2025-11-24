@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		148433F02ED41E7B001DA62D /* SwiftSDUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftSDUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		14844CA82ED4788E001DA62D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -37,6 +38,7 @@
 		148433E72ED41E7B001DA62D = {
 			isa = PBXGroup;
 			children = (
+				14844CA82ED4788E001DA62D /* README.md */,
 				148433FF2ED41E90001DA62D /* Source */,
 				148433F22ED41E7B001DA62D /* SwiftSDUI */,
 				148433F12ED41E7B001DA62D /* Products */,
@@ -253,7 +255,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BKJ5P5QM5S;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -296,7 +298,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = BKJ5P5QM5S;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
