@@ -253,3 +253,116 @@ SDUIView(jsonURL: "https://example.com/screen.json",
 
 ## License
 This repository is provided as‑is; include appropriate license text if distributing as a package.
+
+---
+
+## Appendix A — Property Reference (types, defaults, applies)
+
+Common (applies to: all unless noted)
+- type: String (required). Default: —. Applies: all. Case‑insensitive value.
+- padding: Number | String. Default: none. Applies: all.
+  - String formats: "all:n", "horizontal:n,vertical:n", "left:n,right:n", "top:n", "bottom:n".
+- margin: Number | String. Default: none. Applies: all. Same formats as padding; applied last (outer padding).
+- width: Number. Default: nil. Applies: all.
+- height: Number. Default: nil. Applies: all.
+- size: String ("w,h" or "width:w,height:h"). Default: nil. Applies: all.
+- minWidth: Number. Default: nil. Applies: all.
+- minHeight: Number. Default: nil. Applies: all.
+- maxWidth: Number. Default: nil (use -1 for infinity). Applies: all.
+- maxHeight: Number. Default: nil (use -1 for infinity). Applies: all.
+- minSize: String ("w,h" …). Default: nil. Applies: all.
+- maxSize: String ("w,h" …). Default: nil. Applies: all.
+- backgroundColor: String (named | hex). Default: nil. Applies: all.
+- color: String (named | hex). Default: nil. Applies: text, rectangle, color; also affects some views’ foreground.
+- opacity: Number [0,1]. Default: 1. Applies: all.
+- aspectRatio: Number. Default: nil. Applies: all.
+- offset: String ("x:n,y:n" or "n,n"). Default: 0,0. Applies: all.
+- ignoresSafeArea: String. Default: none. Applies: top‑level containers; any view.
+- decoration: String (CSV). Default: none. Applies: all.
+  - Keys: cornerRadius (Number), borderColor (String), borderWidth (Number), shadowColor (String), shadowRadius (Number), shadowOffset ("x:n,y:n").
+- onTap: String ("#name" or "name"). Default: none. Applies: all.
+
+Text (type: text)
+- text: String. Default: "". Interpolation supported.
+- fontSize: Number. Default: platform default (17).
+- fontWeight: String. Default: regular. Values: ultraLight|thin|light|regular|medium|semibold|bold|heavy|black.
+- font: String ("size:n,weight:w" or "n,w"). Default: nil.
+- lineLimit: Int. Default: nil (unlimited).
+- multilineTextAlignment: String. Default: leading. Values: left|center|right.
+- minimumScaleFactor: Number (0–1). Default: nil.
+- strikethrough: String | Boolish String. Default: false. Optional "color:#HEX".
+- underline: String | Boolish String. Default: false. Optional "color:#HEX".
+
+Image (type: image)
+- imageSystemName: String (SF Symbols). Default: nil.
+- imageName: String (asset). Default: nil.
+- imageURL: String (URL). Default: nil. Disk‑cached under Library/Caches/SDUIImageCache.
+- resizable: Bool. Default: false.
+- contentMode: String. Default: fit. Values: fit|fill.
+
+Rectangle (type: rectangle)
+- color: String (fill). Default: system primary with 0.1 opacity if omitted.
+
+Color (type: color)
+- color: String. Default: clear if omitted.
+
+Button (type: button)
+- title: String. Default: "Button" if no label child.
+- label: Object (child). Default: nil.
+- action: String ("#name"|"name"). Default: none.
+- onTap: String. Default: none. Note: `action` and `onTap` are equivalent for button.
+
+Slider (type: slider)
+- min: Number. Default: 0.
+- max: Number. Default: 1.
+- step: Number. Default: 1.
+- value: Number. Default: `min`.
+- action|onChange|onTap: String. Default: "sliderChanged".
+  - Emits SDUIActionValue(sliderValue: Double).
+
+Toggle (type: toggle)
+- title: String. Default: "".
+- text: String. Default: nil (alternative to title).
+- isOn: Bool. Default: false.
+- action|onChange|onTap: String. Default: "toggleChanged".
+  - Emits SDUIActionValue(toggleValue: Bool).
+
+TextField (type: textfield)
+- placeholder: String. Default: "".
+- text: String (initial). Default: "".
+- submitLabel: String. Default: done. Values: done|go|send|search|join|route|return|next|continue.
+- action|onChange|onTap: String. Default: "textChanged".
+  - Emits SDUIActionValue(textChanged: String).
+
+Spacer (type: spacer)
+- No dedicated props; can still use common sizing/spacing contextually.
+
+Stacks (types: vstack, hstack, zstack)
+- children: Array|Object. Default: [].
+- spacing: Number. Default: platform default.
+- alignment: String. Default: center.
+  - HStack: top|center|bottom.
+  - VStack: leading|center|trailing.
+  - ZStack: top|bottom|leading|trailing|topLeading|topTrailing|bottomLeading|bottomTrailing.
+
+ScrollView (type: scrollview)
+- axes: String. Default: vertical. Values: horizontal|vertical.
+- showsIndicators: Bool. Default: true.
+- children: Array|Object. Default: [].
+
+Grid (type: grid)
+- columns: Int (>=1). Default: 2.
+- spacing: Number. Default: 8.
+- children: Array|Object. Default: [].
+
+TabView (type: tabview)
+- selection: Int. Default: 0.
+- children: Array|Object. Default: []. Each child’s `title` + `imageSystemName|imageName` used for tab item label.
+
+Custom (type: custom)
+- viewId: String (required). Resolved by app‑provided provider to a SwiftUI view.
+- children: ignored.
+
+## Appendix B — Color Values
+- Named: black, white, red, green, blue, gray/grey, yellow, orange, pink, purple, clear.
+- Hex: `#RRGGBB`, `#RRGGBBAA`, `#RGB` (expanded to 6‑digit).
