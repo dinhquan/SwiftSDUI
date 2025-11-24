@@ -55,6 +55,7 @@ struct SDUIView: View {
             { "type": "color", "color": "yellow", "height": 24 }
         ]},
         { "type": "button", "title": "Tap Me", "action": "#previewTapped", "padding": "top:8" },
+        { "type": "rectangle", "color": "#e0e0e0", "size": "100,100", "decoration": "cornerRadius:50,shadowColor:#00000088,shadowRadius:5,shadowOffset:(x:2,y:2)" },
         { "type": "spacer" }
     ]
 }
