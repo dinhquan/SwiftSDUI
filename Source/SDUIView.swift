@@ -51,9 +51,11 @@ struct SDUIView: View {
         { "type": "grid", "columns": 3, "spacing": 6, "children": [
             { "type": "color", "color": "red", "height": 24 },
             { "type": "color", "color": "green", "height": 24 },
-            { "type": "color", "color": "blue", "height": 24 }
+            { "type": "color", "color": "blue", "height": 24 },
+            { "type": "color", "color": "yellow", "height": 24 }
         ]},
-        { "type": "button", "title": "Tap Me", "action": "#previewTapped", "padding": "top:8" }
+        { "type": "button", "title": "Tap Me", "action": "#previewTapped", "padding": "top:8" },
+        { "type": "spacer" }
     ]
 }
 """
@@ -63,20 +65,20 @@ struct SDUIView: View {
     }
 }
 
-enum SDUIViewType: String {
-    case spacer
-    case hstack
-    case vstack
-    case zstack
-    case lazyhstack
-    case lazyvstack
-    case scrollview
-    case grid
-    case text
-    case image
-    case button
-    case rectangle
-    case color
+enum SDUIViewType: String, CaseIterable {
+    case spacer = "Spacer"
+    case hstack = "HStack"
+    case vstack = "VStack"
+    case zstack = "ZStack"
+    case lazyhstack = "LazyHStack"
+    case lazyvstack = "LazyVStack"
+    case scrollview = "ScrollView"
+    case grid = "Grid"
+    case text = "Text"
+    case image = "Image"
+    case button = "Button"
+    case rectangle = "Rectangle"
+    case color = "Color"
 }
 
 
@@ -174,7 +176,7 @@ fileprivate enum SDUIParser {
     private static func parseNode(_ obj: Any) -> SDUINode? {
         guard let dict = obj as? [String: Any] else { return nil }
         guard let typeString = dict[SDUIProperty.type.rawValue] as? String,
-              let type = SDUIViewType(rawValue: typeString.lowercased()) else { return nil }
+              let type = SDUIViewType(caseInsensitive: typeString) else { return nil }
 
         var props: [SDUIProperty: Any] = [:]
         var children: [SDUINode] = []
@@ -194,6 +196,19 @@ fileprivate enum SDUIParser {
         }
 
         return SDUINode(type: type, props: props, children: children)
+    }
+}
+
+// MARK: - Case-insensitive type matching
+
+extension SDUIViewType {
+    init?(caseInsensitive raw: String) {
+        let lower = raw.lowercased()
+        if let match = Self.allCases.first(where: { $0.rawValue.lowercased() == lower }) {
+            self = match
+        } else {
+            return nil
+        }
     }
 }
 
@@ -238,42 +253,42 @@ fileprivate enum SDUIRenderer {
 
     // MARK: Builders
 
-    private static func makeText(_ node: SDUINode) -> some View {
+    private static func makeText(_ node: SDUINode) -> AnyView {
         let text = (node.props[.text] as? String) ?? ""
-        var view = Text(text)
+        var v: AnyView = anyView(Text(text))
 
         if let fontSize = double(node.props[.fontSize]) {
             if let weightStr = node.props[.fontWeight] as? String, let weight = fontWeight(weightStr) {
-                view = view.font(.system(size: CGFloat(fontSize), weight: weight))
+                v = anyView(v.font(.system(size: CGFloat(fontSize), weight: weight)))
             } else {
-                view = view.font(.system(size: CGFloat(fontSize)))
+                v = anyView(v.font(.system(size: CGFloat(fontSize))))
             }
         } else if let fontSpec = node.props[.font] as? String {
             let (size, weight) = parseFontSpec(fontSpec)
-            view = view.font(.system(size: CGFloat(size ?? 17), weight: weight ?? .regular))
+            v = anyView(v.font(.system(size: CGFloat(size ?? 17), weight: weight ?? .regular)))
         }
 
         if let colorStr = node.props[.color] as? String, let color = color(from: colorStr) {
-            view = view.foregroundStyle(color)
+            v = anyView(v.foregroundStyle(color))
         }
         if let limit = int(node.props[.lineLimit]) {
-            view = view.lineLimit(limit)
+            v = anyView(v.lineLimit(limit))
         }
         if let alignStr = node.props[.multilineTextAlignment] as? String {
-            view = view.multilineTextAlignment(textAlignment(alignStr))
+            v = anyView(v.multilineTextAlignment(textAlignment(alignStr)))
         }
         if let scale = double(node.props[.minimumScaleFactor]) {
-            view = view.minimumScaleFactor(scale)
+            v = anyView(v.minimumScaleFactor(scale))
         }
         if let strike = node.props[.strikethrough] as? String {
             let (active, color) = parseDecorationFlag(strike)
-            view = view.strikethrough(active, color: color)
+            v = anyView(v.strikethrough(active, color: color))
         }
         if let underline = node.props[.underline] as? String {
             let (active, color) = parseDecorationFlag(underline)
-            view = view.underline(active, color: color)
+            v = anyView(v.underline(active, color: color))
         }
-        return view
+        return v
     }
 
     private static func makeImage(_ node: SDUINode) -> AnyView {
