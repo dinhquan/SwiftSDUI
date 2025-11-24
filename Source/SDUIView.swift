@@ -13,16 +13,27 @@ struct SDUIView: View {
     let jsonString: String
     private let root: SDUINode?
     private let onAction: ((String, SDUIActionValue) -> Void)?
+    private let parseError: String?
 
     init(jsonString: String, onAction: ((String, SDUIActionValue) -> Void)? = nil) {
         self.jsonString = jsonString
-        self.root = SDUIParser.parse(jsonString: jsonString)
+        do {
+            self.root = try SDUIParser.parse(jsonString: jsonString)
+            self.parseError = nil
+        } catch {
+            self.root = nil
+            if let le = error as? LocalizedError, let desc = le.errorDescription { self.parseError = desc } else { self.parseError = error.localizedDescription }
+        }
         self.onAction = onAction
     }
 
     var body: some View {
         Group {
-            if let root {
+            if let error = parseError {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            } else if let root {
                 SDUIRenderer.buildView(from: root, onAction: onAction)
             } else {
                 Text("Invalid SDUI JSON")
@@ -183,20 +194,24 @@ fileprivate struct SDUINode {
 // MARK: - Parser
 
 fileprivate enum SDUIParser {
-    static func parse(jsonString: String) -> SDUINode? {
-        guard let data = jsonString.data(using: .utf8), !jsonString.isEmpty else { return nil }
+    static func parse(jsonString: String) throws -> SDUINode {
+        let trimmed = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { throw SDUIParseError.emptyInput }
+        guard let data = trimmed.data(using: .utf8) else { throw SDUIParseError.emptyInput }
         do {
             let obj = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
-            return parseNode(obj)
+            return try parseNode(obj)
+        } catch let e as SDUIParseError {
+            throw e
         } catch {
-            return nil
+            throw SDUIParseError.invalidJSON(error.localizedDescription)
         }
     }
 
-    private static func parseNode(_ obj: Any) -> SDUINode? {
-        guard let dict = obj as? [String: Any] else { return nil }
-        guard let typeString = dict[SDUIProperty.type.rawValue] as? String,
-              let type = SDUIViewType(caseInsensitive: typeString) else { return nil }
+    private static func parseNode(_ obj: Any) throws -> SDUINode {
+        guard let dict = obj as? [String: Any] else { throw SDUIParseError.expectedObject }
+        guard let typeString = dict[SDUIProperty.type.rawValue] as? String else { throw SDUIParseError.missingType }
+        guard let type = SDUIViewType(caseInsensitive: typeString) else { throw SDUIParseError.unknownType(typeString) }
 
         var props: [SDUIProperty: Any] = [:]
         var children: [SDUINode] = []
@@ -204,9 +219,13 @@ fileprivate enum SDUIParser {
         for (key, value) in dict {
             if key == SDUIProperty.children.rawValue {
                 if let arr = value as? [Any] {
-                    children = arr.compactMap { parseNode($0) }
-                } else if let one = parseNode(value) { // tolerate single child
-                    children = [one]
+                    children = try arr.enumerated().map { (idx, el) in
+                        do { return try parseNode(el) }
+                        catch { throw SDUIParseError.childError(index: idx, message: error.localizedDescription) }
+                    }
+                } else {
+                    // tolerate single child
+                    if let one = try? parseNode(value) { children = [one] }
                 }
                 continue
             }
@@ -216,6 +235,34 @@ fileprivate enum SDUIParser {
         }
 
         return SDUINode(type: type, props: props, children: children)
+    }
+}
+
+// MARK: - Parse Errors
+
+fileprivate enum SDUIParseError: LocalizedError {
+    case emptyInput
+    case invalidJSON(String)
+    case expectedObject
+    case missingType
+    case unknownType(String)
+    case childError(index: Int, message: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .emptyInput:
+            return "SDUI: JSON is empty."
+        case .invalidJSON(let msg):
+            return "SDUI: Invalid JSON – \(msg)"
+        case .expectedObject:
+            return "SDUI: Expected a JSON object at root."
+        case .missingType:
+            return "SDUI: Missing required 'type' property."
+        case .unknownType(let t):
+            return "SDUI: Unknown type '\(t)'."
+        case .childError(let index, let message):
+            return "SDUI: Error in child[\(index)]: \(message)"
+        }
     }
 }
 
@@ -393,7 +440,7 @@ fileprivate enum SDUIRenderer {
     }
 
     private static func labelChild(from node: SDUINode) -> SDUINode? {
-        if let label = node.props[.label] as? [String: Any], let parsed = SDUIParser.parse(jsonString: toJSONString(label)) {
+        if let label = node.props[.label] as? [String: Any], let parsed = try? SDUIParser.parse(jsonString: toJSONString(label)) {
             return parsed
         }
         // Or use first child as label if present
