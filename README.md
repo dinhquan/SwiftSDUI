@@ -71,10 +71,6 @@ struct ContentView: View {
 }
 ```
 
-Contribute
-----------
-Feel free to open pull requests to add components, properties, examples, or other improvements. Discussions and feature suggestions are welcome in this repo.
-
 Another example with more components:
 
 ```swift
@@ -107,6 +103,9 @@ struct ContentView: View {
 }
 ```
 
+Contribute
+----------
+Feel free to open pull requests to add components, properties, examples, or other improvements. Discussions and feature suggestions are welcome in this repo.
 
 Documentation
 -----------
