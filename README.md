@@ -64,7 +64,7 @@ let json = """
 { "type": "text", "text": "Hello, $name", "font": "size:20,weight:semibold" }
 """
 
-struct Demo: View {
+struct ContentView: View {
     var body: some View {
         SDUIView(json: json, parameters: ["name": "Quan Nguyen"])
     }
@@ -95,13 +95,13 @@ let jsonURL = """
     { "type": "button", "title": "Checkout", "action": "#checkout" }
   ]
 }
+"""
 
-struct Demo: View {
+struct ContentView: View {
     var body: some View {
         SDUIView(json: json])
     }
 }
-"""
 ```
 
 
@@ -114,17 +114,6 @@ Common properties include `padding`, `margin`, sizing (`width`/`height`/`size`),
 Primary components:
 - Containers: `vstack`, `hstack`, `zstack`, `scrollview`, `grid`, `tabview`
 - Leaves/Controls: `text`, `image`, `rectangle`, `color`, `spacer`, `button`, `slider`, `toggle`, `textfield`, `custom`
-
-### Parameters
-- Token grammar: `$` + identifier where identifier is `[A-Za-z_][A-Za-z0-9_]*` (e.g., `$name`, `$user_id`, `$count`).
-- Typed replacement: if a string equals a single token (e.g., "$count"), it is replaced with the parameter value preserving its type (String/Number/Bool/Array/Dict).
-- Interpolation: if a string contains tokens inside text (e.g., "Hello, $name"), they are string‑interpolated.
-- Unknown tokens are left as‑is.
-```json
-{ "type": "text", "text": "Hello, $first_name $last_name" }
-{ "type": "slider", "value": "$progress", "min": 0, "max": 100 }
-{ "type": "toggle", "isOn": "$feature_enabled" }
-```
 
 ### Components & Properties
 All components support the common properties below unless noted. Property names are case‑sensitive; `type` is case‑insensitive.
@@ -246,6 +235,17 @@ SDUIView(json: json, customView: { id -> some View? in
     default: nil
     }
 })
+```
+
+### Parameters
+- Token grammar: `$` + identifier where identifier is `[A-Za-z_][A-Za-z0-9_]*` (e.g., `$name`, `$user_id`, `$count`).
+- Typed replacement: if a string equals a single token (e.g., "$count"), it is replaced with the parameter value preserving its type (String/Number/Bool/Array/Dict).
+- Interpolation: if a string contains tokens inside text (e.g., "Hello, $name"), they are string‑interpolated.
+- Unknown tokens are left as‑is.
+```json
+{ "type": "text", "text": "Hello, $first_name $last_name" }
+{ "type": "slider", "value": "$progress", "min": 0, "max": 100 }
+{ "type": "toggle", "isOn": "$feature_enabled" }
 ```
 
 ### Actions and `SDUIActionValue`
