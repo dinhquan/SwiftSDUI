@@ -5,9 +5,9 @@
 //  Created by Quan on 24/11/25.
 //
 
+import CryptoKit
 import SwiftUI
 import UIKit
-import CryptoKit
 
 final class SDUIImageCache {
     static let shared = SDUIImageCache()
@@ -15,15 +15,27 @@ final class SDUIImageCache {
     private let folderURL: URL
 
     private init() {
-        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let dir = base.appendingPathComponent("SDUIImageCache", isDirectory: true)
+        let base = FileManager.default.urls(
+            for: .cachesDirectory,
+            in: .userDomainMask
+        ).first!
+        let dir = base.appendingPathComponent(
+            "SDUIImageCache",
+            isDirectory: true
+        )
         self.folderURL = dir
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(
+            at: dir,
+            withIntermediateDirectories: true
+        )
     }
 
     func image(for url: URL) -> UIImage? {
         let file = fileURL(for: url)
-        if let data = try? Data(contentsOf: file), let img = UIImage(data: data) { return img }
+        if let data = try? Data(contentsOf: file), let img = UIImage(data: data)
+        {
+            return img
+        }
         return nil
     }
 
@@ -34,7 +46,9 @@ final class SDUIImageCache {
 
     private func fileURL(for url: URL) -> URL {
         let key = Self.hash(url.absoluteString)
-        return folderURL.appendingPathComponent(key).appendingPathExtension("img")
+        return folderURL.appendingPathComponent(key).appendingPathExtension(
+            "img"
+        )
     }
 
     private static func hash(_ s: String) -> String {
@@ -66,9 +80,15 @@ struct SDUICachedImageView: View {
     }
 
     private func renderImage(_ ui: UIImage) -> AnyView {
-        let base = tint == nil ? Image(uiImage: ui).renderingMode(.original) : Image(uiImage: ui).renderingMode(.template)
+        let base =
+            tint == nil
+            ? Image(uiImage: ui).renderingMode(.original)
+            : Image(uiImage: ui).renderingMode(.template)
         var v: AnyView = resizable ? anyView(base.resizable()) : anyView(base)
-        switch (contentMode ?? "fit").lowercased() { case "fill": v = anyView(v.scaledToFill()); default: v = anyView(v.scaledToFit()) }
+        switch (contentMode ?? "fit").lowercased() {
+        case "fill": v = anyView(v.scaledToFill())
+        default: v = anyView(v.scaledToFit())
+        }
         if let tint { v = anyView(v.foregroundStyle(tint)) }
         return v
     }
@@ -81,8 +101,11 @@ struct SDUICachedImageView: View {
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             SDUIImageCache.shared.store(data, for: url)
-            if let img = UIImage(data: data) { await MainActor.run { self.uiImage = img } }
-            else { await MainActor.run { self.error = "Invalid image data" } }
+            if let img = UIImage(data: data) {
+                await MainActor.run { self.uiImage = img }
+            } else {
+                await MainActor.run { self.error = "Invalid image data" }
+            }
         } catch {
             await MainActor.run { self.error = error.localizedDescription }
         }
@@ -100,9 +123,17 @@ struct SDUIRemoteLoader: View {
 
     var body: some View {
         Group {
-            if let error { Text(error).font(.footnote).foregroundStyle(.red) }
-            else if let root { SDUIRenderer.buildView(from: root, onAction: onAction, customView: customView) }
-            else { ProgressView().progressViewStyle(.circular) }
+            if let error {
+                Text(error).font(.footnote).foregroundStyle(.red)
+            } else if let root {
+                SDUIRenderer.buildView(
+                    from: root,
+                    onAction: onAction,
+                    customView: customView
+                )
+            } else {
+                ProgressView().progressViewStyle(.circular)
+            }
         }
         .task { await load() }
     }
@@ -114,7 +145,13 @@ struct SDUIRemoteLoader: View {
             await MainActor.run { self.root = parsed }
         } catch {
             await MainActor.run {
-                if let le = error as? LocalizedError, let desc = le.errorDescription { self.error = desc } else { self.error = error.localizedDescription }
+                if let le = error as? LocalizedError,
+                    let desc = le.errorDescription
+                {
+                    self.error = desc
+                } else {
+                    self.error = error.localizedDescription
+                }
             }
         }
     }

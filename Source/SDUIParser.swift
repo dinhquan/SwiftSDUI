@@ -22,27 +22,39 @@ enum SDUIParseError: LocalizedError {
         case .expectedObject: return "SDUI: Expected a JSON object at root."
         case .missingType: return "SDUI: Missing required 'type' property."
         case .unknownType(let t): return "SDUI: Unknown type '\(t)'."
-        case .childError(let i, let m): return "SDUI: Error in child[\(i)]: \(m)"
+        case .childError(let i, let m):
+            return "SDUI: Error in child[\(i)]: \(m)"
         }
     }
 }
 
 enum SDUIParser {
-    static func parse(jsonString: String, params: [String: Any] = [:]) throws -> SDUINode {
+    static func parse(jsonString: String, params: [String: Any] = [:]) throws
+        -> SDUINode
+    {
         let trimmed = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw SDUIParseError.emptyInput }
-        guard let data = trimmed.data(using: .utf8) else { throw SDUIParseError.emptyInput }
+        guard let data = trimmed.data(using: .utf8) else {
+            throw SDUIParseError.emptyInput
+        }
         return try parse(data: data, params: params)
     }
 
-    static func parse(jsonObject: Any, params: [String: Any] = [:]) throws -> SDUINode {
+    static func parse(jsonObject: Any, params: [String: Any] = [:]) throws
+        -> SDUINode
+    {
         let resolved = resolveParams(in: jsonObject, with: params)
         return try parseNode(resolved)
     }
 
-    static func parse(data: Data, params: [String: Any] = [:]) throws -> SDUINode {
+    static func parse(data: Data, params: [String: Any] = [:]) throws
+        -> SDUINode
+    {
         do {
-            let obj = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+            let obj = try JSONSerialization.jsonObject(
+                with: data,
+                options: [.fragmentsAllowed]
+            )
             let resolved = resolveParams(in: obj, with: params)
             return try parseNode(resolved)
         } catch let e as SDUIParseError {
@@ -78,21 +90,32 @@ enum SDUIParser {
                 var j = start
                 if j < s.endIndex, isNameStartChar(s[j]) {
                     j = s.index(after: j)
-                    while j < s.endIndex, isNameChar(s[j]) { j = s.index(after: j) }
+                    while j < s.endIndex, isNameChar(s[j]) {
+                        j = s.index(after: j)
+                    }
                     let name = String(s[start..<j])
                     if let val = params[name] {
-                        if let vs = val as? String { result.append(vs) }
-                        else { result.append(String(describing: val)) }
-                        i = j; continue
+                        if let vs = val as? String {
+                            result.append(vs)
+                        } else {
+                            result.append(String(describing: val))
+                        }
+                        i = j
+                        continue
                     } else {
-                        result.append("$"); result.append(name)
-                        i = j; continue
+                        result.append("$")
+                        result.append(name)
+                        i = j
+                        continue
                     }
                 } else {
-                    result.append("$"); i = start; continue
+                    result.append("$")
+                    i = start
+                    continue
                 }
             }
-            result.append(ch); i = s.index(after: i)
+            result.append(ch)
+            i = s.index(after: i)
         }
         return result
     }
@@ -106,14 +129,23 @@ enum SDUIParser {
         return j == s.endIndex ? String(s[start..<j]) : nil
     }
 
-    static func isNameStartChar(_ c: Character) -> Bool { c.isLetter || c == "_" }
-    static func isNameChar(_ c: Character) -> Bool { c.isLetter || c.isNumber || c == "_" }
+    static func isNameStartChar(_ c: Character) -> Bool {
+        c.isLetter || c == "_"
+    }
+    static func isNameChar(_ c: Character) -> Bool {
+        c.isLetter || c.isNumber || c == "_"
+    }
 
     // MARK: - Node parsing
     static func parseNode(_ obj: Any) throws -> SDUINode {
-        guard let dict = obj as? [String: Any] else { throw SDUIParseError.expectedObject }
-        guard let typeString = dict[SDUIProperty.type.rawValue] as? String else { throw SDUIParseError.missingType }
-        guard let type = SDUIViewType(caseInsensitive: typeString) else { throw SDUIParseError.unknownType(typeString) }
+        guard let dict = obj as? [String: Any] else {
+            throw SDUIParseError.expectedObject
+        }
+        guard let typeString = dict[SDUIProperty.type.rawValue] as? String
+        else { throw SDUIParseError.missingType }
+        guard let type = SDUIViewType(caseInsensitive: typeString) else {
+            throw SDUIParseError.unknownType(typeString)
+        }
 
         var props: [SDUIProperty: Any] = [:]
         var children: [SDUINode] = []
@@ -122,8 +154,12 @@ enum SDUIParser {
             if key == SDUIProperty.children.rawValue {
                 if let arr = value as? [Any] {
                     children = try arr.enumerated().map { (idx, el) in
-                        do { return try parseNode(el) }
-                        catch { throw SDUIParseError.childError(index: idx, message: error.localizedDescription) }
+                        do { return try parseNode(el) } catch {
+                            throw SDUIParseError.childError(
+                                index: idx,
+                                message: error.localizedDescription
+                            )
+                        }
                     }
                 } else if let one = try? parseNode(value) {
                     children = [one]
@@ -136,4 +172,3 @@ enum SDUIParser {
         return SDUINode(type: type, props: props, children: children)
     }
 }
-

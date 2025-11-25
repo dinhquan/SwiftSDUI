@@ -9,7 +9,9 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        SDUIView(json: json, parameters: ["price": "$9.99"]) { actionName, value in
+        SDUIView(json: json, parameters: ["price": "$9.99"]) {
+            actionName,
+            value in
             switch actionName {
             case "toggleFreeTrial":
                 print("Toggle Free Trial: \(value.toggleValue!)")

@@ -71,6 +71,38 @@ struct Demo: View {
 }
 ```
 
+
+Another example with more components:
+
+```swift
+import SwiftUI
+
+let jsonURL = """
+{
+  "type": "vstack",
+  "padding": "top:16,horizontal:24",
+  "children": [
+    { "type": "text", "text": "Hello", "font": "size:20,weight:semibold" },
+    { "type": "spacer" },
+    { "type": "hstack", "spacing": 8, 
+      "children": [
+        { "type": "text", "text": "In HStack" },
+        { "type": "image", "imageSystemName": "star.fill", "resizable": true, "contentMode": "fit", "width": 24, "height": 24 }
+      ]
+    },
+    { "type": "slider", "min": 0, "max": 100, "value": 50, "action": "#sliderChanged" },
+    { "type": "toggle", "title": "Enable", "isOn": true, "action": "#toggleChanged" },
+    { "type": "button", "title": "Checkout", "action": "#checkout" }
+  ]
+}
+
+struct Demo: View {
+    var body: some View {
+        SDUIView(json: json])
+    }
+}
+"""
+
 Documentation
 -----------
 
@@ -270,24 +302,6 @@ SDUIView(jsonURL: "https://example.com/screen.json",
 - Add a new case to `SDUIViewType` in `Source/SDUITypes.swift`.
 - Add properties to `SDUIProperty` with a clear inline comment.
 - Implement a builder in `Source/SDUIRenderer.swift` that maps your node to SwiftUI.
-
-### Example
-```json
-{
-  "type": "vstack",
-  "padding": "all:16",
-  "children": [
-    { "type": "text", "text": "Hello, $name", "font": "size:20,weight:semibold" },
-    { "type": "hstack", "spacing": 8, "children": [
-      { "type": "text", "text": "In HStack" },
-      { "type": "image", "imageSystemName": "star.fill", "resizable": true, "contentMode": "fit", "width": 24, "height": 24 }
-    ]},
-    { "type": "slider", "min": 0, "max": 100, "value": 50, "action": "#sliderChanged" },
-    { "type": "toggle", "title": "Enable", "isOn": true, "action": "#toggleChanged" },
-    { "type": "button", "title": "Checkout", "action": "#checkout" }
-  ]
-}
-```
 
 Appendix
 ---

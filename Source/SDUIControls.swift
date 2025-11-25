@@ -14,7 +14,13 @@ struct SDUISliderView: View {
     let onChange: (Double) -> Void
     @State private var value: Double
 
-    init(min: Double, max: Double, step: Double?, initial: Double, onChange: @escaping (Double) -> Void) {
+    init(
+        min: Double,
+        max: Double,
+        step: Double?,
+        initial: Double,
+        onChange: @escaping (Double) -> Void
+    ) {
         self.min = min
         self.max = max
         self.step = step
@@ -54,10 +60,19 @@ struct SDUITextFieldView: View {
     let fontWeight: Font.Weight?
     @State private var text: String
 
-    init(placeholder: String, initial: String, submitLabel: String?, font: Font?, fontWeight: Font.Weight?, onChange: @escaping (String) -> Void) {
+    init(
+        placeholder: String,
+        initial: String,
+        submitLabel: String?,
+        font: Font?,
+        fontWeight: Font.Weight?,
+        onChange: @escaping (String) -> Void
+    ) {
         self.placeholder = placeholder
         self._text = State(initialValue: initial)
-        self.submit = submitLabel.flatMap { SDUITextFieldView.mapSubmitLabel($0) }
+        self.submit = submitLabel.flatMap {
+            SDUITextFieldView.mapSubmitLabel($0)
+        }
         self.font = font
         self.fontWeight = fontWeight
         self.onChange = onChange
@@ -94,9 +109,16 @@ struct SDUITabViewContainer: View {
     let customView: ((String) -> AnyView?)?
     @State private var selection: Int
 
-    init(nodes: [SDUINode], initialSelection: Int, onAction: ((String, SDUIActionValue) -> Void)?, customView: ((String) -> AnyView?)?) {
+    init(
+        nodes: [SDUINode],
+        initialSelection: Int,
+        onAction: ((String, SDUIActionValue) -> Void)?,
+        customView: ((String) -> AnyView?)?
+    ) {
         self.nodes = nodes
-        self._selection = State(initialValue: max(0, min(initialSelection, max(0, nodes.count - 1))))
+        self._selection = State(
+            initialValue: max(0, min(initialSelection, max(0, nodes.count - 1)))
+        )
         self.onAction = onAction
         self.customView = customView
     }
@@ -105,17 +127,30 @@ struct SDUITabViewContainer: View {
         TabView(selection: $selection) {
             ForEach(nodes.indices, id: \.self) { i in
                 let child = nodes[i]
-                SDUIRenderer.buildView(from: child, onAction: onAction, customView: customView)
-                    .tabItem { tabItemLabel(for: child, index: i) }
-                    .tag(i)
+                SDUIRenderer.buildView(
+                    from: child,
+                    onAction: onAction,
+                    customView: customView
+                )
+                .tabItem { tabItemLabel(for: child, index: i) }
+                .tag(i)
             }
         }
     }
 
     private func tabItemLabel(for node: SDUINode, index: Int) -> some View {
         let title = (node.props[.title] as? String) ?? "Tab \(index + 1)"
-        if let sys = node.props[.imageSystemName] as? String, !sys.isEmpty { return AnyView(Label(title, systemImage: sys)) }
-        if let name = node.props[.imageName] as? String, !name.isEmpty { return AnyView(HStack { Image(name); Text(title) }) }
+        if let sys = node.props[.imageSystemName] as? String, !sys.isEmpty {
+            return AnyView(Label(title, systemImage: sys))
+        }
+        if let name = node.props[.imageName] as? String, !name.isEmpty {
+            return AnyView(
+                HStack {
+                    Image(name)
+                    Text(title)
+                }
+            )
+        }
         return AnyView(Text(title))
     }
 }
