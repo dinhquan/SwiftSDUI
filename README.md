@@ -71,6 +71,9 @@ struct ContentView: View {
 }
 ```
 
+Contribute
+----------
+Feel free to open pull requests to add components, properties, examples, or other improvements. Discussions and feature suggestions are welcome in this repo.
 
 Another example with more components:
 
@@ -118,7 +121,7 @@ Primary components:
 ### Components & Properties
 All components support the common properties below unless noted. Property names are case‑sensitive; `type` is case‑insensitive.
 
-Common
+#### Common
 - `padding`: number or scoped string (e.g., "all:12", "horizontal:16,vertical:8", "left:8,right:8").
 - `margin`: same format as padding but applied last (outer padding).
 - `width`/`height`/`size`: number or "w,h" / "width:..,height:..".
@@ -132,7 +135,7 @@ Common
 - `decoration`: `cornerRadius`, `borderColor`, `borderWidth`, `shadowColor`, `shadowRadius`, `shadowOffset:(x:..,y:..)`.
 - `onTap`: "#actionName" (fires `onAction`).
 
-Text (`type: "text"`)
+#### Text (`type: "text"`)
 - Props: `text`, `fontSize`, `fontWeight`, `fontName`, `font`, `lineLimit`, `multilineTextAlignment`, `minimumScaleFactor`, `strikethrough`, `underline`, `color`.
 ```json
 { "type": "text", "text": "Title", "font": "size:20,weight:semibold" }
@@ -142,7 +145,7 @@ Text (`type: "text"`)
 { "type": "text", "text": "Sale", "underline": "color:#FF0000" }
 ```
 
-Image (`type: "image"`)
+#### Image (`type: "image"`)
 - Source priority: `imageSystemName` → `imageName` → `imageURL`.
 - Props: `resizable` (Bool), `contentMode` ("fit" | "fill"). Remote images are disk‑cached.
 ```json
@@ -151,7 +154,7 @@ Image (`type: "image"`)
 { "type": "image", "imageURL": "https://…/img.png", "resizable": true }
 ```
 
-Button (`type: "button"`)
+#### Button (`type: "button"`)
 - Props: `title` | `label` (child), `action` | `onTap`.
 - Sends `SDUIActionValue()` when tapped.
 ```json
@@ -162,28 +165,28 @@ Button (`type: "button"`)
 ]}, "action": "#buy" }
 ```
 
-Slider (`type: "slider"`)
+#### Slider (`type: "slider"`)
 - Props: `min`, `max`, `step?`, `value`.
 - Emits `sliderValue`; action name from `action | onChange | onTap` or `sliderChanged`.
 ```json
 { "type": "slider", "min": 0, "max": 1, "step": 0.1, "value": 0.5, "action": "#volumeChanged" }
 ```
 
-Toggle (`type: "toggle"`)
+#### Toggle (`type: "toggle"`)
 - Props: `title` or `text`, `isOn`.
 - Emits `toggleValue`; action name from `action | onChange | onTap` or `toggleChanged`.
 ```json
 { "type": "toggle", "title": "Enabled", "isOn": true, "onChange": "#featureToggle" }
 ```
 
-TextField (`type: "textfield"`)
+#### TextField (`type: "textfield"`)
 - Props: `placeholder`, initial `text`, `submitLabel` (`done|go|search|next|continue`).
 - Emits `textChanged`; action name from `action | onChange | onTap` or `textChanged`.
 ```json
 { "type": "textfield", "placeholder": "Email", "submitLabel": "done", "action": "#emailChanged" }
 ```
 
-Spacer / Rectangle / Color
+#### Spacer / Rectangle / Color
 - Spacer: no extra props.
 - Rectangle: `color` fill; Color: literal color view.
 ```json
@@ -192,7 +195,7 @@ Spacer / Rectangle / Color
 { "type": "spacer", "height": 12 }
 ```
 
-Stacks (`vstack` / `hstack` / `zstack`)
+#### Stacks (`vstack` / `hstack` / `zstack`)
 - `children`: array or single object; `spacing`: number.
 - Alignment: HStack `top|center|bottom`; VStack `leading|center|trailing`; ZStack `top|bottom|leading|trailing|topLeading|topTrailing|bottomLeading|bottomTrailing`.
 ```json
@@ -202,19 +205,19 @@ Stacks (`vstack` / `hstack` / `zstack`)
 ]}
 ```
 
-ScrollView (`type: "scrollview"`)
+#### ScrollView (`type: "scrollview"`)
 - `axes`: "horizontal" | "vertical"; `showsIndicators`: Bool. Children in `VStack` (vertical) or `HStack` (horizontal).
 ```json
 { "type": "scrollview", "axes": "horizontal", "children": [ … ] }
 ```
 
-Grid (`type: "grid"`)
+#### Grid (`type: "grid"`)
 - `columns`: Int (>= 1); optional `spacing`. Renders a `LazyVGrid`.
 ```json
 { "type": "grid", "columns": 3, "spacing": 6, "children": [ … ] }
 ```
 
-TabView (`type: "tabview"`)
+#### TabView (`type: "tabview"`)
 - `selection`: initial selected index. Each tab label is built from `title` and optional `imageSystemName|imageName` on the child.
 ```json
 { "type": "tabview", "selection": 0, "children": [
@@ -223,7 +226,7 @@ TabView (`type: "tabview"`)
 ]}
 ```
 
-Custom (`type: "custom"`)
+#### Custom (`type: "custom"`)
 - `viewId`: resolve to an app‑provided SwiftUI view.
 ```json
 { "type": "custom", "viewId": "custom_view_1", "padding": "all:16" }
