@@ -48,6 +48,7 @@ struct SDUICachedImageView: View {
     let url: URL
     let resizable: Bool
     let contentMode: String?
+    let tint: Color?
     @State private var uiImage: UIImage?
     @State private var error: String?
 
@@ -65,9 +66,10 @@ struct SDUICachedImageView: View {
     }
 
     private func renderImage(_ ui: UIImage) -> AnyView {
-        let base = Image(uiImage: ui).renderingMode(.original)
+        let base = tint == nil ? Image(uiImage: ui).renderingMode(.original) : Image(uiImage: ui).renderingMode(.template)
         var v: AnyView = resizable ? anyView(base.resizable()) : anyView(base)
         switch (contentMode ?? "fit").lowercased() { case "fill": v = anyView(v.scaledToFill()); default: v = anyView(v.scaledToFit()) }
+        if let tint { v = anyView(v.foregroundStyle(tint)) }
         return v
     }
 

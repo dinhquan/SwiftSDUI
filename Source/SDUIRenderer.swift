@@ -60,26 +60,29 @@ enum SDUIRenderer {
     }
 
     private static func makeImage(_ node: SDUINode) -> AnyView {
+        let tint = (node.props[.color] as? String).flatMap { color(from: $0) }
         if let sys = node.props[.imageSystemName] as? String, !sys.isEmpty {
-            return anyView(imageView(from: Image(systemName: sys), props: node.props))
+            return anyView(imageView(from: Image(systemName: sys), props: node.props, tint: tint))
         }
         if let name = node.props[.imageName] as? String, !name.isEmpty {
-            return anyView(imageView(from: Image(name), props: node.props))
+            return anyView(imageView(from: Image(name), props: node.props, tint: tint))
         }
         if let urlStr = node.props[.imageURL] as? String, let url = URL(string: urlStr) {
             let resizable = bool(node.props[.resizable]) ?? false
             let mode = (node.props[.contentMode] as? String)?.lowercased() ?? "fit"
-            return anyView(SDUICachedImageView(url: url, resizable: resizable, contentMode: mode))
+            return anyView(SDUICachedImageView(url: url, resizable: resizable, contentMode: mode, tint: tint))
         }
-        return anyView(Image(systemName: "photo"))
+        return anyView(imageView(from: Image(systemName: "photo"), props: node.props, tint: tint))
     }
 
-    private static func imageView(from image: Image, props: [SDUIProperty: Any]) -> AnyView {
-        var view: AnyView = anyView(image)
-        if let r = bool(props[.resizable]), r { view = anyView(image.resizable()) }
+    private static func imageView(from image: Image, props: [SDUIProperty: Any], tint: Color?) -> AnyView {
+        let baseImage = tint == nil ? image : image.renderingMode(.template)
+        var view: AnyView = anyView(baseImage)
+        if let r = bool(props[.resizable]), r { view = anyView(baseImage.resizable()) }
         if let mode = props[.contentMode] as? String {
             switch mode.lowercased() { case "fill": view = anyView(view.scaledToFill()); default: view = anyView(view.scaledToFit()) }
         }
+        if let tint { view = anyView(view.foregroundStyle(tint)) }
         return view
     }
 
