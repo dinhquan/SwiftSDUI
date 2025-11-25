@@ -27,7 +27,7 @@ Demos
 Installation
 ------------
 
-Swift Package Manager
+#### Swift Package Manager
 - File > Add Packages…
 - Enter repository URL: https://github.com/dinhquan/SwiftSDUI
 - Add the product "SwiftSDUI" to your target
@@ -43,7 +43,8 @@ targets: [
 ]
 ```
 
-CocoaPods
+#### CocoaPods
+
 Add to your Podfile:
 
 ```swift
@@ -73,14 +74,14 @@ struct Demo: View {
 Documentation
 -----------
 
-## JSON Schema Overview
+### JSON Schema Overview
 The root is a JSON object. The `type` field determines the component. `type` values are case‑insensitive (e.g., "VStack" or "vstack"), but property keys are case‑sensitive.
 Common properties include `padding`, `margin`, sizing (`width`/`height`/`size`), min/max, `backgroundColor`/`color`, `opacity`, `aspectRatio`, `offset`, `ignoresSafeArea`, and `decoration` (see Components & Properties).
 Primary components:
 - Containers: `vstack`, `hstack`, `zstack`, `scrollview`, `grid`, `tabview`
 - Leaves/Controls: `text`, `image`, `rectangle`, `color`, `spacer`, `button`, `slider`, `toggle`, `textfield`, `custom`
 
-## Parameters
+### Parameters
 - Token grammar: `$` + identifier where identifier is `[A-Za-z_][A-Za-z0-9_]*` (e.g., `$name`, `$user_id`, `$count`).
 - Typed replacement: if a string equals a single token (e.g., "$count"), it is replaced with the parameter value preserving its type (String/Number/Bool/Array/Dict).
 - Interpolation: if a string contains tokens inside text (e.g., "Hello, $name"), they are string‑interpolated.
@@ -91,7 +92,7 @@ Primary components:
 { "type": "toggle", "isOn": "$feature_enabled" }
 ```
 
-## Components & Properties
+### Components & Properties
 All components support the common properties below unless noted. Property names are case‑sensitive; `type` is case‑insensitive.
 
 Common
@@ -109,9 +110,11 @@ Common
 - `onTap`: "#actionName" (fires `onAction`).
 
 Text (`type: "text"`)
-- Props: `text`, `fontSize`, `fontWeight`, `font`, `lineLimit`, `multilineTextAlignment`, `minimumScaleFactor`, `strikethrough`, `underline`, `color`.
+- Props: `text`, `fontSize`, `fontWeight`, `fontName`, `font`, `lineLimit`, `multilineTextAlignment`, `minimumScaleFactor`, `strikethrough`, `underline`, `color`.
 ```json
 { "type": "text", "text": "Title", "font": "size:20,weight:semibold" }
+{ "type": "text", "text": "Custom family", "fontName": "Roboto-Regular", "fontSize": 18 }
+{ "type": "text", "text": "Spec with name", "font": "size:20,name:Roboto,weight:bold" }
 { "type": "text", "text": "Body", "fontSize": 16, "lineLimit": 2, "multilineTextAlignment": "center" }
 { "type": "text", "text": "Sale", "underline": "color:#FF0000" }
 ```
@@ -211,7 +214,7 @@ SDUIView(json: json, customView: { id -> some View? in
 })
 ```
 
-## Actions and `SDUIActionValue`
+### Actions and `SDUIActionValue`
 - Any node can trigger actions via `onTap:"#actionName"`.
 - Controls send typed payloads:
   - Slider → `SDUIActionValue(sliderValue: Double)`
@@ -229,7 +232,7 @@ SDUIView(json: json) { name, value in
 }
 ```
 
-## Custom Views (type: "custom")
+### Custom Views (type: "custom")
 Inject your own SwiftUI view by `viewId`:
 ```json
 { "type": "custom", "viewId": "custom_view_1", "padding": "all:16" }
@@ -244,7 +247,7 @@ SDUIView(json: json, customView: { id -> some View? in
 ```
 You can also pass `customViewProvider: (String) -> AnyView?` if you prefer explicit `AnyView`.
 
-## Remote JSON
+### Remote JSON
 ```swift
 SDUIView(jsonURL: "https://example.com/screen.json",
          parameters: ["user": "Alice"],
@@ -253,22 +256,22 @@ SDUIView(jsonURL: "https://example.com/screen.json",
 - Shows `ProgressView` while loading and a precise error message if parsing fails.
  - Supports `parameters` and `customView` just like local JSON.
 
-## Image Loading and Caching
+### Image Loading and Caching
 - `imageURL` uses an async loader with disk‑only caching under `Library/Caches/SDUIImageCache`.
 - `resizable: true` and `contentMode: "fit|fill"` are supported.
 
-## Error Handling
+### Error Handling
 - Invalid inputs throw descriptive errors shown in the UI, e.g.:
   - `SDUI: Missing required 'type' property.`
   - `SDUI: Unknown type 'vstak'.`
   - `SDUI: Error in child[2]: …`
 
-## Extending the Schema
+### Extending the Schema
 - Add a new case to `SDUIViewType` in `Source/SDUITypes.swift`.
 - Add properties to `SDUIProperty` with a clear inline comment.
 - Implement a builder in `Source/SDUIRenderer.swift` that maps your node to SwiftUI.
 
-## Example
+### Example
 ```json
 {
   "type": "vstack",
@@ -286,9 +289,10 @@ SDUIView(jsonURL: "https://example.com/screen.json",
 }
 ```
 
+Appendix
 ---
 
-## Appendix A — Property Reference (types, defaults, applies)
+### Appendix A — Property Reference (types, defaults, applies)
 
 Common (applies to: all unless noted)
 - type: String (required). Default: —. Applies: all. Case‑insensitive value.
@@ -395,6 +399,6 @@ Custom (type: custom)
 - viewId: String (required). Resolved by app‑provided provider to a SwiftUI view.
 - children: ignored.
 
-## Appendix B — Color Values
+### Appendix B — Color Values
 - Named: black, white, red, green, blue, gray/grey, yellow, orange, pink, purple, clear.
 - Hex: `#RRGGBB`, `#RRGGBBAA`, `#RGB` (expanded to 6‑digit).

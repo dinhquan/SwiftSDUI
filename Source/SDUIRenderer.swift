@@ -43,14 +43,9 @@ enum SDUIRenderer {
     private static func makeText(_ node: SDUINode) -> AnyView {
         let text = (node.props[.text] as? String) ?? ""
         var v: AnyView = anyView(Text(text))
-        if let fontSize = double(node.props[.fontSize]) {
-            if let weightStr = node.props[.fontWeight] as? String, let weight = fontWeight(weightStr) {
-                v = anyView(v.font(.system(size: CGFloat(fontSize), weight: weight)))
-            } else { v = anyView(v.font(.system(size: CGFloat(fontSize)))) }
-        } else if let fontSpec = node.props[.font] as? String {
-            let (size, weight) = parseFontSpec(fontSpec)
-            v = anyView(v.font(.system(size: CGFloat(size ?? 17), weight: weight ?? .regular)))
-        }
+        let (fontVal, extraWeight) = font(from: node.props)
+        if let fontVal { v = anyView(v.font(fontVal)) }
+        if let extraWeight { v = anyView(v.fontWeight(extraWeight)) }
         if let colorStr = node.props[.color] as? String, let color = color(from: colorStr) { v = anyView(v.foregroundStyle(color)) }
         if let limit = int(node.props[.lineLimit]) { v = anyView(v.lineLimit(limit)) }
         if let alignStr = node.props[.multilineTextAlignment] as? String { v = anyView(v.multilineTextAlignment(textAlignment(alignStr))) }
@@ -89,6 +84,7 @@ enum SDUIRenderer {
 
     private static func makeButton(_ node: SDUINode, onAction: ((String, SDUIActionValue) -> Void)? = nil, customView: ((String) -> AnyView?)? = nil) -> AnyView {
         let title = (node.props[.title] as? String) ?? (node.props[.text] as? String) ?? "Button"
+        let (fontVal, extraWeight) = font(from: node.props)
         if let labelNode = labelChild(from: node) {
             return anyView(Button(action: {
                 if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) { onAction?(name, SDUIActionValue()) }
@@ -96,7 +92,7 @@ enum SDUIRenderer {
         } else {
             return anyView(Button(action: {
                 if let act = (node.props[.action] as? String) ?? (node.props[.onTap] as? String), let name = actionName(from: act) { onAction?(name, SDUIActionValue()) }
-            }) { Text(title) })
+            }) { buttonLabel(title: title, font: fontVal, weight: extraWeight) })
         }
     }
 
@@ -182,8 +178,9 @@ enum SDUIRenderer {
         let placeholder = (node.props[.placeholder] as? String) ?? ""
         let initial = (node.props[.text] as? String) ?? ""
         let submit = (node.props[.submitLabel] as? String)
+        let (fontVal, extraWeight) = font(from: node.props)
         let name = actionName(from: (node.props[.action] as? String) ?? (node.props[.onChange] as? String) ?? (node.props[.onTap] as? String) ?? "textChanged") ?? "textChanged"
-        return anyView(SDUITextFieldView(placeholder: placeholder, initial: initial, submitLabel: submit) { text in onAction?(name, SDUIActionValue(textChanged: text)) })
+        return anyView(SDUITextFieldView(placeholder: placeholder, initial: initial, submitLabel: submit, font: fontVal, fontWeight: extraWeight) { text in onAction?(name, SDUIActionValue(textChanged: text)) })
     }
 
     // MARK: Modifiers and utilities
@@ -270,6 +267,36 @@ enum SDUIRenderer {
         }
     }
 
+    private static func buttonLabel(title: String, font: Font?, weight: Font.Weight?) -> some View {
+        var text = Text(title)
+        if let font { text = text.font(font) }
+        if let weight { text = text.fontWeight(weight) }
+        return text
+    }
+
+    private static func font(from props: [SDUIProperty: Any]) -> (Font?, Font.Weight?) {
+        let fontSizeProp = double(props[.fontSize])
+        let fontWeightProp = (props[.fontWeight] as? String).flatMap { fontWeight($0) }
+        let fontSpec = (props[.font] as? String).map { parseFontSpec($0) }
+        let fontNameProp = (props[.fontName] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let size = fontSizeProp ?? fontSpec?.size
+        let weight = fontWeightProp ?? fontSpec?.weight
+        let name = (fontNameProp?.isEmpty == false ? fontNameProp : nil) ?? (fontSpec?.name ?? nil)
+
+        if let name {
+            let resolvedSize = CGFloat(size ?? 17)
+            return (.custom(name, size: resolvedSize), weight)
+        }
+        if let size {
+            return (.system(size: CGFloat(size), weight: weight ?? .regular), nil)
+        }
+        if let weight {
+            return (.system(size: 17, weight: weight), nil)
+        }
+        return (nil, nil)
+    }
+
     private static func parseDecoration(_ spec: String) -> DecorationSpec {
         var cornerRadius: Double?; var borderColor: Color?; var borderWidth: Double?
         var shadowColor: Color = .black.opacity(0.2); var shadowRadius: Double?; var shadowX: Double = 0; var shadowY: Double = 0
@@ -290,13 +317,28 @@ enum SDUIRenderer {
     }
 
     // Helpers
-    private static func parseFontSpec(_ s: String) -> (Double?, Font.Weight?) {
-        var size: Double?; var weight: Font.Weight?; let parts = s.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+    private static func parseFontSpec(_ s: String) -> (size: Double?, weight: Font.Weight?, name: String?) {
+        var size: Double?; var weight: Font.Weight?; var name: String?
+        let parts = s.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         for part in parts {
-            if part.contains(":") { let kv = part.split(separator: ":").map(String.init); if kv.count == 2 { if kv[0].lowercased() == "size" { size = Double(kv[1]) }; if kv[0].lowercased() == "weight" { weight = fontWeight(kv[1]) } } }
-            else { if size == nil, let n = Double(part) { size = n } else if weight == nil { weight = fontWeight(part) } }
+            if part.contains(":") {
+                let kv = part.split(separator: ":", maxSplits: 1).map(String.init)
+                if kv.count == 2 {
+                    switch kv[0].lowercased() {
+                    case "size": size = Double(kv[1])
+                    case "weight": weight = fontWeight(kv[1])
+                    case "name": name = kv[1].trimmingCharacters(in: .init(charactersIn: "\""))
+                    default: break
+                    }
+                }
+            } else {
+                if size == nil, let n = Double(part) { size = n }
+                else if weight == nil, let w = fontWeight(part) { weight = w }
+                else if name == nil { name = part.trimmingCharacters(in: .init(charactersIn: "\"")) }
+            }
         }
-        return (size, weight)
+        if let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines), trimmed.isEmpty { name = nil } else { name = name?.trimmingCharacters(in: .whitespacesAndNewlines) }
+        return (size, weight, name)
     }
     private static func parseDecorationFlag(_ s: String) -> (Bool, Color?) {
         let trimmed = s.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -57,6 +57,7 @@ enum SDUIProperty: String {
     case fontSize // 16
     case fontWeight // "ultraLight" | "thin" | "light" | "regular" | "medium" | "semibold" | "bold" | "heavy" | "black"
     case font // "size:16,weight:bold" or "16,bold"
+    case fontName // "Roboto-Regular" or family face name
     // case color — use common color property
     case lineLimit // 0, 1, 2 …
     case multilineTextAlignment // "left" | "center" | "right"

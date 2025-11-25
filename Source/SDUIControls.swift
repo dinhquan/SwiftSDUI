@@ -50,12 +50,16 @@ struct SDUITextFieldView: View {
     let placeholder: String
     let submit: SubmitLabel?
     let onChange: (String) -> Void
+    let font: Font?
+    let fontWeight: Font.Weight?
     @State private var text: String
 
-    init(placeholder: String, initial: String, submitLabel: String?, onChange: @escaping (String) -> Void) {
+    init(placeholder: String, initial: String, submitLabel: String?, font: Font?, fontWeight: Font.Weight?, onChange: @escaping (String) -> Void) {
         self.placeholder = placeholder
         self._text = State(initialValue: initial)
         self.submit = submitLabel.flatMap { SDUITextFieldView.mapSubmitLabel($0) }
+        self.font = font
+        self.fontWeight = fontWeight
         self.onChange = onChange
     }
 
@@ -63,6 +67,8 @@ struct SDUITextFieldView: View {
         TextField(placeholder, text: $text)
             .textFieldStyle(.roundedBorder)
             .submitLabel(submit ?? .done)
+            .font(font)
+            .fontWeight(fontWeight)
             .onChange(of: text) { onChange($0) }
     }
 

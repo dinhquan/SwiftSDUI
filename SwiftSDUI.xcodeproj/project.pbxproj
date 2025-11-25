@@ -11,6 +11,7 @@
 		14844CA82ED4788E001DA62D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		14844CAA2ED491C9001DA62D /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		14844CAB2ED491C9001DA62D /* SwiftSDUI.podspec */ = {isa = PBXFileReference; lastKnownFileType = text; path = SwiftSDUI.podspec; sourceTree = "<group>"; };
+		14847E012ED5B647001DA62D /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -40,9 +41,10 @@
 		148433E72ED41E7B001DA62D = {
 			isa = PBXGroup;
 			children = (
-				14844CAA2ED491C9001DA62D /* Package.swift */,
-				14844CAB2ED491C9001DA62D /* SwiftSDUI.podspec */,
 				14844CA82ED4788E001DA62D /* README.md */,
+				14847E012ED5B647001DA62D /* LICENSE */,
+				14844CAB2ED491C9001DA62D /* SwiftSDUI.podspec */,
+				14844CAA2ED491C9001DA62D /* Package.swift */,
 				148433FF2ED41E90001DA62D /* Source */,
 				148433F22ED41E7B001DA62D /* SwiftSDUI */,
 				148433F12ED41E7B001DA62D /* Products */,
