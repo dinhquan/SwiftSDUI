@@ -9,6 +9,9 @@ SwiftSDUI — JSON‑Driven UI for SwiftUI
 
 SwiftSDUI lets you describe SwiftUI screens in JSON and render them at runtime. It’s a lightweight Server‑Driven UI (SDUI) layer: ship layout and behavior from your server, keep logic in your app.
 
+![SwiftUI Demo](https://raw.githubusercontent.com/dinhquan/SwiftSDUI/main/Demo/demo1.jpg)
+
+
 ## Features
 - SwiftUI rendering from JSON (containers, text, images, shapes, controls)
 - Case‑insensitive `type` mapping and property schema
@@ -19,10 +22,6 @@ SwiftSDUI lets you describe SwiftUI screens in JSON and render them at runtime. 
 - Custom view injection with `type: "custom"` + `viewId`
 - Helpful, precise parse errors for invalid JSON/schemas
 
-Demos
------
-
-![SwiftUI Demo](https://raw.githubusercontent.com/dinhquan/SwiftSDUI/main/Demo/demo1.jpg)
 
 Installation
 ------------
@@ -103,9 +102,11 @@ struct ContentView: View {
 }
 ```
 
+
 Contribute
 ----------
 Feel free to open pull requests to add components, properties, examples, or other improvements. Discussions and feature suggestions are welcome in this repo.
+
 
 Documentation
 -----------
@@ -307,8 +308,9 @@ SDUIView(jsonURL: "https://example.com/screen.json",
 - Add properties to `SDUIProperty` with a clear inline comment.
 - Implement a builder in `Source/SDUIRenderer.swift` that maps your node to SwiftUI.
 
+
 Appendix
----
+------------
 
 ### Appendix A — Property Reference (types, defaults, applies)
 
