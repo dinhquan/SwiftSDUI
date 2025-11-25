@@ -7,7 +7,7 @@ SwiftSDUI — JSON‑Driven UI for SwiftUI
 ![Swift](https://img.shields.io/badge/Swift-5.7%2B-orange)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-SwiftSDUI lets you describe SwiftUI screens in JSON and render them at runtime. It’s a lightweight Server‑Driven UI (SDUI) layer: ship layout and behavior from your server, keep logic in your app.
+SwiftSDUI lets you describe SwiftUI views in JSON and render them at runtime. It’s a lightweight Server‑Driven UI (SDUI) layer: ship layout and behavior from your server, keep logic in your app.
 
 ![SwiftUI Demo](https://raw.githubusercontent.com/dinhquan/SwiftSDUI/main/Demo/demo1.jpg)
 
@@ -97,7 +97,46 @@ let jsonURL = """
 
 struct ContentView: View {
     var body: some View {
-        SDUIView(json: json])
+        SDUIView(json: json)
+    }
+}
+```
+
+Load from a remote JSON URL:
+
+```swift
+import SwiftUI
+
+struct RemoteContentView: View {
+    var body: some View {
+        SDUIView(jsonURL: "https://example.com/home.json")
+    }
+}
+```
+
+Use Firebase Remote Config as the JSON source:
+
+```swift
+import SwiftUI
+import FirebaseRemoteConfig
+
+struct ContentView: View {
+    @State private var homeObject: Any?
+    private let remoteConfig = RemoteConfig.remoteConfig()
+
+    var body: some View {
+        Group {
+            if let homeObject {
+                SDUIView(jsonObject: homeObject)
+            }
+        }
+        .task(loadRemoteConfig)
+    }
+
+    private func loadRemoteConfig() async {
+        _ = try? await remoteConfig.fetchAndActivate()
+        guard let json = remoteConfig["home_screen"].jsonValue else { return }
+        homeObject = json
     }
 }
 ```
