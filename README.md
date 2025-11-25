@@ -1,4 +1,11 @@
-# SwiftSDUI — JSON‑Driven UI for SwiftUI
+SwiftSDUI — JSON‑Driven UI for SwiftUI
+==============
+
+![SPM](https://img.shields.io/badge/SPM-supported-brightgreen)
+![CocoaPods](https://img.shields.io/cocoapods/v/SwiftSDUI?label=CocoaPods)
+![Platform](https://img.shields.io/badge/platforms-iOS%2013%2B-blue)
+![Swift](https://img.shields.io/badge/Swift-5.7%2B-orange)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 SwiftSDUI lets you describe SwiftUI screens in JSON and render them at runtime. It’s a lightweight Server‑Driven UI (SDUI) layer: ship layout and behavior from your server, keep logic in your app.
 
@@ -12,27 +19,43 @@ SwiftSDUI lets you describe SwiftUI screens in JSON and render them at runtime. 
 - Custom view injection with `type: "custom"` + `viewId`
 - Helpful, precise parse errors for invalid JSON/schemas
 
-## Installation
-- Swift Package Manager (recommended)
-  - In Xcode: File → Add Packages… → Enter your repo URL → Add.
-  - Or add as a local package: File → Add Packages… → Add Local… → select this folder.
-  - Package manifest is provided (`Package.swift`). Minimum iOS 15.
-- CocoaPods
-  - Ensure `SwiftSDUI.podspec` is in the repo. If using from a Git tag, push a tag matching `s.version`.
-  - Podfile:
-    ```ruby
-    platform :ios, '15.0'
-    use_frameworks!
+Demos
+-----
 
-    target 'YourApp' do
-      pod 'SwiftSDUI', :git => 'https://github.com/your/repo.git', :tag => '0.1.0'
-      # Or for local development:
-      # pod 'SwiftSDUI', :path => '../SwiftSDUI'
-    end
-    ```
-  - Then run: `pod install`
+![SwiftUI Demo](https://raw.githubusercontent.com/dinhquan/SwiftSDUI/main/Demo/demo1.jpg)
 
-Import and render:
+Installation
+------------
+
+Swift Package Manager
+- File > Add Packages…
+- Enter repository URL: https://github.com/dinhquan/SwiftSDUI
+- Add the product "SwiftSDUI" to your target
+
+Or Package.swift
+
+```swift
+dependencies: [
+  .package(url: "https://github.com/dinhquan/SwiftSDUI", from: "0.1.0")
+],
+targets: [
+  .target(name: "YourApp", dependencies: ["SwiftSDUI"]) 
+]
+```
+
+CocoaPods
+Add to your Podfile:
+
+```swift
+pod 'SwiftSDUI', :git => "https://github.com/dinhquan/SwiftSDUI", :tag => '0.1.0'
+```
+
+Then run `pod install`.
+
+
+Quick Start
+-----------
+
 ```swift
 import SwiftUI
 
@@ -42,12 +65,13 @@ let json = """
 
 struct Demo: View {
     var body: some View {
-        SDUIView(json: json,
-                 parameters: ["name": "Quan Nguyen"],
-                 onAction: { name, value in print(name, value) })
+        SDUIView(json: json, parameters: ["name": "Quan Nguyen"])
     }
 }
 ```
+
+Documentation
+-----------
 
 ## JSON Schema Overview
 The root is a JSON object. The `type` field determines the component. `type` values are case‑insensitive (e.g., "VStack" or "vstack"), but property keys are case‑sensitive.
@@ -56,7 +80,7 @@ Primary components:
 - Containers: `vstack`, `hstack`, `zstack`, `scrollview`, `grid`, `tabview`
 - Leaves/Controls: `text`, `image`, `rectangle`, `color`, `spacer`, `button`, `slider`, `toggle`, `textfield`, `custom`
 
-## Parameters (`$token`)
+## Parameters
 - Token grammar: `$` + identifier where identifier is `[A-Za-z_][A-Za-z0-9_]*` (e.g., `$name`, `$user_id`, `$count`).
 - Typed replacement: if a string equals a single token (e.g., "$count"), it is replaced with the parameter value preserving its type (String/Number/Bool/Array/Dict).
 - Interpolation: if a string contains tokens inside text (e.g., "Hello, $name"), they are string‑interpolated.
@@ -261,14 +285,6 @@ SDUIView(jsonURL: "https://example.com/screen.json",
   ]
 }
 ```
-
-## Notes & Limitations
-- Grid is a simple `LazyVGrid` with `columns` count (no row/column spans yet).
-- `imageURL` does not currently honor HTTP cache headers; it writes raw bytes to disk by URL hash.
-- JSON parsing is forgiving on children (accepts a single child or an array).
-
-## License
-This repository is provided as‑is; include appropriate license text if distributing as a package.
 
 ---
 
