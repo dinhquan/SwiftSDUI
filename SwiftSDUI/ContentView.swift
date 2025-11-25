@@ -7,53 +7,162 @@
 
 import SwiftUI
 
-let json = """
-{
-"type": "vstack",
-"padding": "all:16",
-"children": [
-    { "type": "text", "text": "Hello, world! My name is $name", "font": "size:20,weight:semibold" },
-    { "type": "hstack", "alignment": "top", "spacing": 8, "children": [
-        { "type": "text", "text": "In HStack", "fontSize": 14, "fontWeight": "medium" },
-        { "type": "image", "imageSystemName": "star.fill", "resizable": true, "contentMode": "fit", "width": 24, "height": 24 }
-    ]},
-    { "type": "zstack", "alignment": "topTrailing", "children": [
-        { "type": "rectangle", "color": "#f0f0f0", "size": "200,60", "decoration": "cornerRadius:8,shadowRadius:3,shadowOffset:(x:0,y:1)" },
-        { "type": "text", "text": "ZStack overlay", "padding": "all:12" }
-    ]},
-    { "type": "grid", "columns": 3, "spacing": 6, "children": [
-        { "type": "color", "color": "red", "height": 24 },
-        { "type": "color", "color": "green", "height": 24 },
-        { "type": "color", "color": "blue", "height": 24 },
-        { "type": "color", "color": "yellow", "height": 24 }
-    ]},
-    { "type": "button", "title": "Tap Me", "action": "#previewTapped", "padding": "top:8" },
-    { "type": "slider", "min": 0, "max": 100, "step": 5, "value": 50, "action": "#previewSlider" },
-    { "type": "toggle", "title": "Enable Feature", "isOn": true, "action": "#previewToggle" },
-    { "type": "textfield", "placeholder": "Enter text", "text": "", "submitLabel": "done", "action": "#previewText" },
-    { "type": "rectangle", "color": "#e0e0e0", "size": "100,100", "decoration": "cornerRadius:50,shadowColor:#00000088,shadowRadius:5,shadowOffset:(x:2,y:2)" },
-    { "type": "spacer" },
-    { "type": "custom", "viewId": "custom_1" }
-]
-}
-"""
-
 struct ContentView: View {
     var body: some View {
-        let parameters = ["name": "Quan Nguyen"]
-        SDUIView(json: json, parameters: parameters) { name, value in
-            print("Action: \(name) -> slider:\(String(describing: value.sliderValue)) toggle:\(String(describing: value.toggleValue)) text:\(String(describing: value.textChanged))")
-        } customView: { viewId in
-            switch viewId {
-            case "custom_1":
-                return Color.red
-                    .frame(height: 100)
-            default:
-                return nil
+        SDUIView(json: json, parameters: ["price": "$9.99"]) { actionName, value in
+            switch actionName {
+            case "toggleFreeTrial":
+                print("Toggle Free Trial: \(value.toggleValue!)")
+            case "subscribeNow":
+                print("Subscribe Now tapped")
+            default: ()
             }
         }
     }
 }
+
+private let json = """
+{
+  "type": "zstack",
+  "children": [
+    {
+      "type": "image",
+      "imageName": "bg",
+      "resizable": true,
+      "ignoresSafeArea": "all"
+    },
+    {
+      "type": "vstack",
+      "padding": "all:16",
+      "backgroundColor": "#ffffff55",
+      "children": [
+        {
+          "type": "image",
+          "imageSystemName": "apple.logo",
+          "resizable": true,
+          "contentMode": "fit",
+          "size": "120,120",
+          "margin": "top:50",
+          "color": "#3B62E5"
+        },
+        {
+          "type": "spacer"
+        },
+        {
+          "type": "text",
+          "text": "Unlock Premium",
+          "font": "40,bold",
+          "padding": "horizontal:16",
+          "multilineTextAlignment": "center",
+          "color": "#000",
+          "margin": "bottom:30"
+        },
+        {
+          "type": "vstack",
+          "alignment": "leading",
+          "children": [
+            {
+              "type": "hstack",
+              "spacing": 16,
+              "children": [
+                {
+                  "type": "image",
+                  "imageSystemName": "nosign",
+                  "resizable": true,
+                  "contentMode": "fit",
+                  "size": "24,24",
+                  "color": "black"
+                },
+                {
+                  "type": "text",
+                  "text": "Remove ads",
+                  "fontSize": 16,
+                  "color": "#000"
+                }
+              ]
+            },
+            {
+              "type": "hstack",
+              "spacing": 16,
+              "children": [
+                {
+                  "type": "image",
+                  "imageSystemName": "infinity",
+                  "resizable": true,
+                  "contentMode": "fit",
+                  "size": "24,24",
+                  "color": "black"
+                },
+                {
+                  "type": "text",
+                  "text": "Unlimited use",
+                  "fontSize": 16,
+                  "color": "#000"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "hstack",
+          "height": "50",
+          "margin": "horizontal:16,top:50,bottom:16",
+          "padding": "horizontal:20",
+          "backgroundColor": "white",
+          "decoration": "cornerRadius:25,borderColor:#bbb,borderWidth:1",
+          "children": [
+            {
+              "type": "text",
+              "text": "Enable Free Trial",
+              "font": "size:18,weight:medium",
+              "color": "#000"
+            },
+            {
+              "type": "spacer"
+            },
+            {
+              "type": "toggle",
+              "isOn": true,
+              "action": "#toggleFreeTrial"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "$price/month",
+          "font": "18,bold",
+          "color": "black",
+          "padding": "horizontal:16,bottom:8"
+        },
+        {
+          "type": "button",
+          "label": {
+            "type": "text",
+            "text": "Subscribe Now",
+            "font": "size:20,weight:bold",
+            "color": "white",
+            "backgroundColor": "#3B62E5",
+            "height": 56,
+            "maxWidth": "-1",
+            "margin": "horizontal:24,bottom:12",
+            "decoration": "cornerRadius:28,shadowColor:#00000088,shadowRadius:3,shadowOffset:(x:0,y:2)"
+          },
+          "action": "#subscribeNow"
+        },
+        {
+          "type": "text",
+          "text": "By subscribing, you agree to our Terms of Service and Privacy Policy.",
+          "fontSize": 14,
+          "color": "#888",
+          "padding": "horizontal:16",
+          "margin": "bottom:20",
+          "multilineTextAlignment": "center"
+        }
+      ]
+    }
+  ]
+}
+"""
 
 #Preview {
     ContentView()

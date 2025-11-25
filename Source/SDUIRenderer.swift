@@ -12,25 +12,26 @@ enum SDUIRenderer {
                           onAction: ((String, SDUIActionValue) -> Void)? = nil,
                           customView: ((String) -> AnyView?)? = nil) -> AnyView {
         let base: AnyView
+        let clipDecoration: Bool
         switch node.type {
-        case .text: base = anyView(makeText(node))
-        case .image: base = anyView(makeImage(node))
-        case .button: base = anyView(makeButton(node, onAction: onAction, customView: customView))
-        case .slider: base = anyView(makeSlider(node, onAction: onAction))
-        case .toggle: base = anyView(makeToggle(node, onAction: onAction))
-        case .textfield: base = anyView(makeTextField(node, onAction: onAction))
-        case .spacer: base = anyView(Spacer(minLength: nil))
-        case .hstack, .lazyhstack: base = anyView(makeHStack(node, onAction: onAction, customView: customView))
-        case .vstack, .lazyvstack: base = anyView(makeVStack(node, onAction: onAction, customView: customView))
-        case .zstack: base = anyView(makeZStack(node, onAction: onAction, customView: customView))
-        case .scrollview: base = anyView(makeScrollView(node, onAction: onAction, customView: customView))
-        case .rectangle: base = anyView(makeRectangle(node))
-        case .color: base = anyView(makeColor(node))
-        case .grid: base = anyView(makeGrid(node, onAction: onAction, customView: customView))
-        case .tabview: base = anyView(makeTabView(node, onAction: onAction, customView: customView))
-        case .custom: base = anyView(makeCustom(node, provider: customView))
+        case .text: base = anyView(makeText(node)); clipDecoration = true
+        case .image: base = anyView(makeImage(node)); clipDecoration = true
+        case .button: base = anyView(makeButton(node, onAction: onAction, customView: customView)); clipDecoration = true
+        case .slider: base = anyView(makeSlider(node, onAction: onAction)); clipDecoration = true
+        case .toggle: base = anyView(makeToggle(node, onAction: onAction)); clipDecoration = true
+        case .textfield: base = anyView(makeTextField(node, onAction: onAction)); clipDecoration = true
+        case .spacer: base = anyView(Spacer(minLength: nil)); clipDecoration = true
+        case .hstack, .lazyhstack: base = anyView(makeHStack(node, onAction: onAction, customView: customView)); clipDecoration = false
+        case .vstack, .lazyvstack: base = anyView(makeVStack(node, onAction: onAction, customView: customView)); clipDecoration = false
+        case .zstack: base = anyView(makeZStack(node, onAction: onAction, customView: customView)); clipDecoration = false
+        case .scrollview: base = anyView(makeScrollView(node, onAction: onAction, customView: customView)); clipDecoration = false
+        case .rectangle: base = anyView(makeRectangle(node)); clipDecoration = true
+        case .color: base = anyView(makeColor(node)); clipDecoration = true
+        case .grid: base = anyView(makeGrid(node, onAction: onAction, customView: customView)); clipDecoration = false
+        case .tabview: base = anyView(makeTabView(node, onAction: onAction, customView: customView)); clipDecoration = false
+        case .custom: base = anyView(makeCustom(node, provider: customView)); clipDecoration = true
         }
-        let withCore = applyCoreModifiers(to: base, using: node.props)
+        let withCore = applyCoreModifiers(to: base, using: node.props, clipDecoration: clipDecoration)
         let withMargin = applyMargin(to: withCore, using: node.props)
         if let tap = node.props[.onTap] as? String, let name = actionName(from: tap) {
             return anyView(withMargin.onTapGesture { onAction?(name, SDUIActionValue()) })
@@ -186,8 +187,9 @@ enum SDUIRenderer {
     }
 
     // MARK: Modifiers and utilities
-    private static func applyCoreModifiers(to view: AnyView, using props: [SDUIProperty: Any]) -> AnyView {
+    private static func applyCoreModifiers(to view: AnyView, using props: [SDUIProperty: Any], clipDecoration: Bool) -> AnyView {
         var v: AnyView = view
+        let decorationSpec = (props[.decoration] as? String).flatMap { parseDecoration($0) }
         if let pad = props[.padding] { v = applyPadding(v, value: pad) }
         if let sizeStr = props[.size] as? String, let wh = parseSize(sizeStr) { v = anyView(v.frame(width: wh.width, height: wh.height)) }
         let width = cgFloat(props[.width]); let height = cgFloat(props[.height])
@@ -200,11 +202,17 @@ enum SDUIRenderer {
             if let w = width { v = anyView(v.frame(width: w)) }
             if let h = height { v = anyView(v.frame(height: h)) }
         }
-        if let bgStr = props[.backgroundColor] as? String, let bg = color(from: bgStr) { v = anyView(v.background(bg)) }
+        if let bgStr = props[.backgroundColor] as? String, let bg = color(from: bgStr) {
+            if let spec = decorationSpec, !clipDecoration, let r = spec.cornerRadius {
+                v = anyView(v.background(RoundedRectangle(cornerRadius: CGFloat(r)).fill(bg)))
+            } else {
+                v = anyView(v.background(bg))
+            }
+        }
         if let opacity = double(props[.opacity]) { v = anyView(v.opacity(opacity)) }
         if let ratio = double(props[.aspectRatio]) { v = anyView(v.aspectRatio(ratio, contentMode: .fit)) }
         if let offsetStr = props[.offset] as? String, let xy = parsePoint(offsetStr) { v = anyView(v.offset(x: xy.x, y: xy.y)) }
-        if let deco = props[.decoration] as? String { v = applyDecoration(v, spec: deco) }
+        if let spec = decorationSpec { v = applyDecoration(v, spec: spec, clipContent: clipDecoration) }
         if let ignores = props[.ignoresSafeArea] as? String { v = anyView(v.ignoresSafeArea(edges: safeAreaEdges(ignores))) }
         return v
     }
@@ -231,11 +239,41 @@ enum SDUIRenderer {
         return view
     }
 
-    private static func applyDecoration(_ view: AnyView, spec: String) -> AnyView {
-        var v = view
-        let parts = spec.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+    private static func applyDecoration(_ view: AnyView, spec: DecorationSpec, clipContent: Bool) -> AnyView {
+        guard spec.hasEffect else { return view }
+        let radius = CGFloat(spec.cornerRadius ?? 0)
+        if clipContent {
+            var v = view
+            if let r = spec.cornerRadius { v = anyView(v.cornerRadius(CGFloat(r))) }
+            if let bw = spec.borderWidth, let bc = spec.borderColor { v = anyView(v.overlay(RoundedRectangle(cornerRadius: radius).stroke(bc, lineWidth: CGFloat(bw)))) }
+            if let sr = spec.shadowRadius { v = anyView(v.shadow(color: spec.shadowColor, radius: CGFloat(sr), x: CGFloat(spec.shadowX), y: CGFloat(spec.shadowY))) }
+            return v
+        } else {
+            var overlayView: AnyView = anyView(RoundedRectangle(cornerRadius: radius).fill(Color.clear))
+            if let bw = spec.borderWidth, let bc = spec.borderColor { overlayView = anyView(overlayView.overlay(RoundedRectangle(cornerRadius: radius).stroke(bc, lineWidth: CGFloat(bw)))) }
+            if let sr = spec.shadowRadius { overlayView = anyView(overlayView.shadow(color: spec.shadowColor, radius: CGFloat(sr), x: CGFloat(spec.shadowX), y: CGFloat(spec.shadowY))) }
+            return anyView(view.overlay(overlayView))
+        }
+    }
+
+    private struct DecorationSpec {
+        var cornerRadius: Double?
+        var borderColor: Color?
+        var borderWidth: Double?
+        var shadowColor: Color
+        var shadowRadius: Double?
+        var shadowX: Double
+        var shadowY: Double
+
+        var hasEffect: Bool {
+            cornerRadius != nil || borderColor != nil || borderWidth != nil || shadowRadius != nil
+        }
+    }
+
+    private static func parseDecoration(_ spec: String) -> DecorationSpec {
         var cornerRadius: Double?; var borderColor: Color?; var borderWidth: Double?
         var shadowColor: Color = .black.opacity(0.2); var shadowRadius: Double?; var shadowX: Double = 0; var shadowY: Double = 0
+        let parts = spec.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         for part in parts {
             let kv = part.split(separator: ":", maxSplits: 1).map(String.init); guard kv.count == 2 else { continue }
             switch kv[0].lowercased() {
@@ -248,10 +286,7 @@ enum SDUIRenderer {
             default: break
             }
         }
-        if let r = cornerRadius { v = anyView(v.cornerRadius(CGFloat(r))) }
-        if let bw = borderWidth, let bc = borderColor { v = anyView(v.overlay(RoundedRectangle(cornerRadius: CGFloat(cornerRadius ?? 0)).stroke(bc, lineWidth: CGFloat(bw)))) }
-        if let sr = shadowRadius { v = anyView(v.shadow(color: shadowColor, radius: CGFloat(sr), x: CGFloat(shadowX), y: CGFloat(shadowY))) }
-        return v
+        return DecorationSpec(cornerRadius: cornerRadius, borderColor: borderColor, borderWidth: borderWidth, shadowColor: shadowColor, shadowRadius: shadowRadius, shadowX: shadowX, shadowY: shadowY)
     }
 
     // Helpers
