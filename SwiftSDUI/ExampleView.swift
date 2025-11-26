@@ -21,7 +21,10 @@ struct ExampleView: View {
                 SDUIView(
                     json: """
                         { "type": "button", "title": "Primary Action", "backgroundColor": "orange", "padding": "vertical:10,horizontal:16", "decoration": "cornerRadius:12,shadowRadius:2,shadowOffset:(x:0,y:1)" }
-                        """
+                        """,
+                    onAction: { name, value in
+                        print("Button action: \(name) -> \(value)")
+                    }
                 )
 
                 SDUIView(
@@ -94,13 +97,34 @@ struct ExampleView: View {
                 SDUIView(
                     json: """
                         { "type": "slider", "min": 0, "max": 100, "value": 30, "step": 5, "action": "#sliderChanged" }
-                        """
+                        """,
+                    onAction: { name, value in
+                        print("Slider action: \(name) -> \(value.sliderValue ?? 0)")
+                    }
                 )
                 
                 SDUIView(
                     json: """
                         { "type": "toggle", "title": "Enable notifications", "isOn": true, "padding": "all:4" }
-                        """
+                        """,
+                    onAction: { name, value in
+                        print("Toggle action: \(name) -> \(value.toggleValue ?? false)")
+                    }
+                )
+                
+                SDUIView(
+                    json: """
+                        { "type": "textfield",
+                          "placeholder": "Enter email",
+                          "text": "",
+                          "submitLabel": "go",
+                          "padding": "all:8",
+                          "decoration": "cornerRadius:12,borderColor:#d1d5db,borderWidth:1"
+                        }
+                        """,
+                    onAction: { name, value in
+                        print("Text action: \(name) -> \(value.textChanged ?? "")")
+                    }
                 )
                 
                 SDUIView(

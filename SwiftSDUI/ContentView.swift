@@ -38,14 +38,15 @@ private let json = """
       "padding": "all:16",
       "backgroundColor": "#ffffff55",
       "children": [
-        {
-          "type": "image",
-          "imageSystemName": "apple.logo",
-          "resizable": true,
-          "contentMode": "fit",
-          "size": "120,120",
-          "margin": "top:50",
-          "color": "#3B62E5"
+        { 
+          "type": "video",
+          "videoURL": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          "loop": true,
+          "muted": true,
+          "videoGravity": "fill",
+          "height": 200,
+          "margin": "horizontal:16,top:50",
+          "decoration": "cornerRadius:12,shadowRadius:4,shadowOffset:(x:0,y:2)"
         },
         {
           "type": "spacer"
