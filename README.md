@@ -141,6 +141,23 @@ struct ContentView: View {
 }
 ```
 
+Render a remote video:
+
+```swift
+let videoJSON = """
+{ "type": "video",
+  "videoURL": "https://example.com/intro.mp4",
+  "loop": true,
+  "muted": true,
+  "videoGravity": "fill",
+  "volume": 0.5 }
+"""
+
+struct VideoContentView: View {
+    var body: some View { SDUIView(json: videoJSON) }
+}
+```
+
 
 Contribute
 ----------
@@ -394,6 +411,13 @@ Image (type: image)
 - imageURL: String (URL). Default: nil. Disk‑cached under Library/Caches/SDUIImageCache.
 - resizable: Bool. Default: false.
 - contentMode: String. Default: fit. Values: fit|fill.
+
+Video (type: video)
+- videoURL: String (URL). Required.
+- loop: Bool. Default: false (plays once).
+- muted: Bool. Default: false.
+- volume: Number 0–1. Default: system player volume.
+- videoGravity: String. Default: fit. Values: fit|fill|resize (resize stretches to bounds).
 
 Rectangle (type: rectangle)
 - color: String (fill). Default: system primary with 0.1 opacity if omitted.

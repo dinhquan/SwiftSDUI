@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AVFoundation
 
 enum SDUIRenderer {
     static func buildView(
@@ -75,6 +76,9 @@ enum SDUIRenderer {
                 makeTabView(node, onAction: onAction, customView: customView)
             )
             clipDecoration = false
+        case .video:
+            base = anyView(makeVideo(node))
+            clipDecoration = true
         case .custom:
             base = anyView(makeCustom(node, provider: customView))
             clipDecoration = true
@@ -163,6 +167,31 @@ enum SDUIRenderer {
                 from: Image(systemName: "photo"),
                 props: node.props,
                 tint: tint
+            )
+        )
+    }
+
+    private static func makeVideo(_ node: SDUINode) -> AnyView {
+        guard
+            let urlStr = node.props[.videoURL] as? String,
+            let url = URL(string: urlStr)
+        else {
+            return anyView(
+                Text("Invalid videoURL").font(.footnote)
+                    .foregroundStyle(.secondary)
+            )
+        }
+        let loop = bool(node.props[.loop]) ?? false
+        let muted = bool(node.props[.muted]) ?? false
+        let volume = double(node.props[.volume]).map { Float($0) }
+        let gravity = videoGravity(node.props[.videoGravity])
+        return anyView(
+            SDUIVideoView(
+                url: url,
+                loop: loop,
+                muted: muted,
+                volume: volume,
+                videoGravity: gravity
             )
         )
     }
@@ -896,6 +925,16 @@ enum SDUIRenderer {
         case "heavy": return .heavy
         case "black": return .black
         default: return nil
+        }
+    }
+    private static func videoGravity(_ value: Any?) -> AVLayerVideoGravity {
+        guard let s = (value as? String)?.lowercased() else {
+            return .resizeAspect
+        }
+        switch s {
+        case "fill", "resizeaspectfill": return .resizeAspectFill
+        case "resize", "stretch": return .resize
+        default: return .resizeAspect
         }
     }
     private static func color(from s: String) -> Color? {

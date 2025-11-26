@@ -26,6 +26,7 @@ enum SDUIViewType: String, CaseIterable {
     case textfield = "TextField"
     case tabview = "TabView"
     case custom = "Custom"
+    case video = "Video"
 }
 
 enum SDUIProperty: String {
@@ -107,6 +108,13 @@ enum SDUIProperty: String {
 
     // TabView
     case selection  // initial selected index
+
+    // Video
+    case videoURL  // "https://example.com/video.mp4"
+    case loop  // true | false
+    case videoGravity  // "fit" | "fill" | "resize"
+    case muted  // true | false
+    case volume  // numeric volume 0.0...1.0
 }
 
 // Node model

@@ -102,6 +102,20 @@ struct ExampleView: View {
             """
         ),
         ExampleItem(
+            title: "Video player",
+            json: """
+            { "type": "video",
+              "videoURL": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+              "loop": true,
+              "muted": true,
+              "volumn": 0.4,
+              "videoGravity": "fill",
+              "height": 200,
+              "decoration": "cornerRadius:12,shadowRadius:4,shadowOffset:(x:0,y:2)"
+            }
+            """
+        ),
+        ExampleItem(
             title: "Custom view injection",
             json: """
             {
