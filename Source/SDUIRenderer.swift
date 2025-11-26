@@ -973,7 +973,6 @@ enum SDUIRenderer {
         case "purple": return .purple
         case "clear": return .clear
         default:
-            // Fallback to asset-named color (non-lowercased to preserve names)
             let name = s.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !name.isEmpty else { return nil }
             return Color(name)
