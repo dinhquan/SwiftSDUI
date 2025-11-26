@@ -7,20 +7,24 @@ SwiftSDUI — JSON‑Driven UI for SwiftUI
 ![Swift](https://img.shields.io/badge/Swift-5.7%2B-orange)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-SwiftSDUI lets you describe SwiftUI views in JSON and render them at runtime. It’s a lightweight Server‑Driven UI (SDUI) layer: ship layout and behavior from your server, keep logic in your app.
+SwiftSDUI lets you declare SwiftUI layouts in JSON and render them on‑device. It’s a lightweight Server‑Driven UI (SDUI) layer: deliver layouts and behaviors from your backend while keeping logic native.
+
+What that means for teams:
+- Ship layout/content tweaks instantly by updating JSON on your server or Firebase Remote Config.
+- Run experiments (A/B tests, personalization) without waiting for App Store releases.
+- Give non‑developers (designers/PMs) a safe way to iterate on UI copy and structure.
 
 ![SwiftUI Demo](https://raw.githubusercontent.com/dinhquan/SwiftSDUI/main/Demo/demo1.jpg)
 
 
 ## Features
-- SwiftUI rendering from JSON (containers, text, images, shapes, controls)
-- Case‑insensitive `type` mapping and property schema
-- Actions via `onTap`/`action` with typed payloads (`SDUIActionValue`)
-- Parameter interpolation with `$name` (typed replacement or inline strings)
-- Async remote JSON loading (`jsonURL:`) with loading/error UI
-- Disk‑only caching for remote images (`imageURL`)
-- Custom view injection with `type: "custom"` + `viewId`
-- Helpful, precise parse errors for invalid JSON/schemas
+- Broad component set: `text`, `image`, `button`, `slider`, `toggle`, `textfield`, stacks (`vstack`/`hstack`/`lazyhstack`/`lazyvstack`/`zstack`), `scrollview`, `grid`, `tabview`, `video`, `spacer`, `rectangle`, `color`, `custom`.
+- Action handling for buttons/sliders/toggles/textfields via `SDUIActionValue`.
+- Parameter interpolation (`$name`, `$user_id`, etc.) for dynamic content.
+- Remote JSON loading with `jsonURL:` plus built‑in loading/error UI.
+- Disk‑only caching for remote images.
+- Custom view injection with `type: "custom"`.
+
 
 
 Installation
