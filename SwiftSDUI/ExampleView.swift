@@ -32,7 +32,7 @@ struct ExampleView: View {
                         { "type": "image", "imageSystemName": "heart.fill", "resizable": true, "contentMode": "fit", "size": "40,40", "color": "#e63946", "decoration": "cornerRadius:12,shadowRadius:3,shadowOffset:(x:0,y:2)" }
                         """
                 )
-                
+
                 SDUIView(
                     json: """
                         {
@@ -48,7 +48,7 @@ struct ExampleView: View {
                         }
                         """
                 )
-                
+
                 SDUIView(
                     json: """
                         {
@@ -63,7 +63,7 @@ struct ExampleView: View {
                         }
                         """
                 )
-                
+
                 SDUIView(
                     json: """
                         {
@@ -78,7 +78,7 @@ struct ExampleView: View {
                         }
                         """
                 )
-                
+
                 SDUIView(
                     json: """
                         { "type": "grid", "columns": 4, "spacing": 6, "children": [
@@ -93,25 +93,29 @@ struct ExampleView: View {
                         ] }
                         """
                 )
-                
+
                 SDUIView(
                     json: """
                         { "type": "slider", "min": 0, "max": 100, "value": 30, "step": 5, "action": "#sliderChanged" }
                         """,
                     onAction: { name, value in
-                        print("Slider action: \(name) -> \(value.sliderValue ?? 0)")
+                        print(
+                            "Slider action: \(name) -> \(value.sliderValue ?? 0)"
+                        )
                     }
                 )
-                
+
                 SDUIView(
                     json: """
                         { "type": "toggle", "title": "Enable notifications", "isOn": true, "padding": "all:4" }
                         """,
                     onAction: { name, value in
-                        print("Toggle action: \(name) -> \(value.toggleValue ?? false)")
+                        print(
+                            "Toggle action: \(name) -> \(value.toggleValue ?? false)"
+                        )
                     }
                 )
-                
+
                 SDUIView(
                     json: """
                         { "type": "textfield",
@@ -123,10 +127,12 @@ struct ExampleView: View {
                         }
                         """,
                     onAction: { name, value in
-                        print("Text action: \(name) -> \(value.textChanged ?? "")")
+                        print(
+                            "Text action: \(name) -> \(value.textChanged ?? "")"
+                        )
                     }
                 )
-                
+
                 SDUIView(
                     json: """
                         { "type": "video",
@@ -140,7 +146,7 @@ struct ExampleView: View {
                         }
                         """
                 )
-                
+
                 SDUIView(
                     json: """
                         {

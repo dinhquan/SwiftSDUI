@@ -129,7 +129,7 @@ public struct SDUIActionValue {
     public var sliderValue: Double?
     public var toggleValue: Bool?
     public var textChanged: String?
-    
+
     public init(
         sliderValue: Double? = nil,
         toggleValue: Bool? = nil,

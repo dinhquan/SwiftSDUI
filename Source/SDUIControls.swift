@@ -79,12 +79,22 @@ struct SDUITextFieldView: View {
     }
 
     var body: some View {
-        TextField(placeholder, text: $text)
-            .textFieldStyle(.roundedBorder)
-            .submitLabel(submit ?? .done)
-            .font(font)
-            .fontWeight(fontWeight)
-            .onChange(of: text) { onChange($0) }
+        Group {
+            if #available(iOS 16.0, *), let weight = fontWeight {
+                TextField(placeholder, text: $text)
+                    .textFieldStyle(.roundedBorder)
+                    .submitLabel(submit ?? .done)
+                    .font(font)
+                    .fontWeight(weight)
+                    .onChange(of: text) { onChange($0) }
+            } else {
+                TextField(placeholder, text: $text)
+                    .textFieldStyle(.roundedBorder)
+                    .submitLabel(submit ?? .done)
+                    .font(font)
+                    .onChange(of: text) { onChange($0) }
+            }
+        }
     }
 
     private static func mapSubmitLabel(_ s: String) -> SubmitLabel {

@@ -5,8 +5,8 @@
 //  Created by Quan on 24/11/25.
 //
 
-import SwiftUI
 import AVFoundation
+import SwiftUI
 
 enum SDUIRenderer {
     static func buildView(
@@ -105,7 +105,13 @@ enum SDUIRenderer {
         var v: AnyView = anyView(Text(text))
         let (fontVal, extraWeight) = font(from: node.props)
         if let fontVal { v = anyView(v.font(fontVal)) }
-        if let extraWeight { v = anyView(v.fontWeight(extraWeight)) }
+        if let extraWeight {
+            if #available(iOS 16.0, *) {
+                v = anyView(v.fontWeight(extraWeight))
+            } else {
+                v = anyView(v)
+            }
+        }
         if let colorStr = node.props[.color] as? String,
             let color = color(from: colorStr)
         {
@@ -122,11 +128,15 @@ enum SDUIRenderer {
         }
         if let strike = node.props[.strikethrough] as? String {
             let (active, color) = parseDecorationFlag(strike)
-            v = anyView(v.strikethrough(active, color: color))
+            if #available(iOS 16.0, *) {
+                v = anyView(v.strikethrough(active, color: color))
+            }
         }
         if let underline = node.props[.underline] as? String {
             let (active, color) = parseDecorationFlag(underline)
-            v = anyView(v.underline(active, color: color))
+            if #available(iOS 16.0, *) {
+                v = anyView(v.underline(active, color: color))
+            }
         }
         return v
     }
