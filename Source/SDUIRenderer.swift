@@ -972,7 +972,11 @@ enum SDUIRenderer {
         case "pink": return .pink
         case "purple": return .purple
         case "clear": return .clear
-        default: return nil
+        default:
+            // Fallback to asset-named color (non-lowercased to preserve names)
+            let name = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { return nil }
+            return Color(name)
         }
     }
     private static func hexToRGBA(_ hex: String) -> (

@@ -408,6 +408,7 @@ Text (type: text)
 - minimumScaleFactor: Number (0–1). Default: nil.
 - strikethrough: String | Boolish String. Default: false. Optional "color:#HEX".
 - underline: String | Boolish String. Default: false. Optional "color:#HEX".
+- color: String. Named asset colors supported (e.g., "main") in addition to basic names and hex.
 
 Image (type: image)
 - imageSystemName: String (SF Symbols). Default: nil.
