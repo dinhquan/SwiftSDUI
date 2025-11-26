@@ -3,7 +3,7 @@ SwiftSDUI — JSON‑Driven UI for SwiftUI
 
 ![SPM](https://img.shields.io/badge/SPM-supported-brightgreen)
 ![CocoaPods](https://img.shields.io/cocoapods/v/SwiftSDUI?label=CocoaPods)
-![Platform](https://img.shields.io/badge/platforms-iOS%2013%2B-blue)
+![Platform](https://img.shields.io/badge/platforms-iOS%2015%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.7%2B-orange)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
